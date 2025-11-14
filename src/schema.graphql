@@ -1,0 +1,101 @@
+type Query {
+  courseTemplates: [CourseTemplate!]!
+  courseTemplate(id: ID!): CourseTemplate
+  achievementTypes: [AchievementType!]!
+  achievementType(id: ID!): AchievementType
+}
+
+type Mutation {
+  courseTemplateAddLmsContentTypeResource(
+    courseTemplateId: ID!
+    input: LmsResourceTypeResourceInput!
+  ): CourseTemplate!
+  
+  courseTemplateAddLmsContentTypeExternal(
+    courseTemplateId: ID!
+    input: LmsResourceTypeExternalInput!
+  ): CourseTemplate!
+  
+  courseTemplateAddLmsContentTypeSeparator(
+    courseTemplateId: ID!
+    input: LmsResourceTypeSeparatorInput!
+  ): CourseTemplate!
+  
+  courseTemplateAddAchievementType(
+    courseTemplateId: ID!
+    input: CourseTemplateAddAchievementTypeInput!
+  ): CourseTemplate!
+}
+
+type CourseTemplate {
+  id: ID!
+  name: String!
+  description: String
+  lmsContentTypes: [LmsContentType!]!
+  achievementTypes: [AchievementType!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+union LmsContentType = LmsResourceType | LmsExternalType | LmsSeparatorType
+
+type LmsResourceType {
+  id: ID!
+  title: String!
+  description: String
+  resourceUrl: String
+  order: Int!
+  createdAt: String!
+}
+
+type LmsExternalType {
+  id: ID!
+  title: String!
+  description: String
+  externalUrl: String!
+  order: Int!
+  createdAt: String!
+}
+
+type LmsSeparatorType {
+  id: ID!
+  title: String!
+  order: Int!
+  createdAt: String!
+}
+
+type AchievementType {
+  id: ID!
+  name: String!
+  description: String
+  points: Int
+  badgeUrl: String
+  createdAt: String!
+}
+
+input LmsResourceTypeResourceInput {
+  title: String!
+  description: String
+  resourceUrl: String
+  order: Int
+}
+
+input LmsResourceTypeExternalInput {
+  title: String!
+  description: String
+  externalUrl: String!
+  order: Int
+}
+
+input LmsResourceTypeSeparatorInput {
+  title: String!
+  order: Int
+}
+
+input CourseTemplateAddAchievementTypeInput {
+  name: String!
+  description: String
+  points: Int
+  badgeUrl: String
+}
+
