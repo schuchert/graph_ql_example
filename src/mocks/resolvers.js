@@ -6,6 +6,8 @@
  * with realistic fake data based on the schema types.
  */
 
+import { generateId, generateTimestamp } from '../utils/helpers.js';
+
 /**
  * Custom resolvers for Query operations
  * 
@@ -13,23 +15,63 @@
  * automatically generate mock data based on the schema.
  */
 export const queryResolvers = {
-  courseTemplates: () => {
-    // Return array - graphql-mocks will generate mock CourseTemplate objects
-    return [];
+  // CourseTemplate queries
+  courseTemplates: (parent, args) => {
+    // Return connection structure - graphql-mocks will generate mock data
+    return {
+      edges: [],
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: null,
+        endCursor: null,
+      },
+    };
   },
   
-  courseTemplate: (parent, args, context) => {
+  courseTemplate: (parent, args) => {
     // Return object with id - graphql-mocks will fill in other fields
-    return { id: args.id };
+    return {
+      id: args.id,
+      legacyId: `legacy-${args.id}`,
+      lifecycleState: 'ACTIVE',
+    };
   },
   
-  achievementTypes: () => {
-    // Return array - graphql-mocks will generate mock AchievementType objects
-    return [];
+  // AchievementType queries
+  achievementTypes: (parent, args) => {
+    return {
+      edges: [],
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: null,
+        endCursor: null,
+      },
+    };
   },
   
   achievementType: (parent, args) => {
-    // Return object with id - graphql-mocks will fill in other fields
+    return {
+      id: args.id,
+      legacyId: `legacy-${args.id}`,
+    };
+  },
+  
+  // LMS Content queries
+  lmsContents: (parent, args) => {
+    return {
+      edges: [],
+      pageInfo: {
+        hasNextPage: false,
+        hasPreviousPage: false,
+        startCursor: null,
+        endCursor: null,
+      },
+    };
+  },
+  
+  lmsContent: (parent, args) => {
     return { id: args.id };
   },
 };
@@ -37,102 +79,243 @@ export const queryResolvers = {
 /**
  * Custom resolvers for Mutation operations
  * 
- * These mutations return the updated entities.
- * In a real implementation, you would use the paper store to persist changes.
+ * These mutations return response objects with errors and the mutated entity.
  */
 export const mutationResolvers = {
   // CourseTemplate CRUD
-  createCourseTemplate: (parent, args, context) => {
-    const now = new Date().toISOString();
+  createCourseTemplate: (parent, args) => {
+    const now = generateTimestamp();
+    const id = generateId('template');
     return {
-      id: `template-${Date.now()}`,
-      name: args.input.name,
-      description: args.input.description,
-      createdAt: now,
-      updatedAt: now,
+      errors: [],
+      courseTemplate: {
+        id,
+        legacyId: `legacy-${id}`,
+        name: args.input.name,
+        description: args.input.description || null,
+        code: args.input.code || null,
+        title: args.input.title || args.input.name,
+        learningMode: args.input.learningMode || 'LMS',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
     };
   },
   
-  updateCourseTemplate: (parent, args, context) => {
-    const now = new Date().toISOString();
+  updateCourseTemplate: (parent, args) => {
+    const now = generateTimestamp();
     return {
-      id: args.id,
-      name: args.input.name,
-      description: args.input.description,
-      updatedAt: now,
+      errors: [],
+      courseTemplate: {
+        id: args.input.id,
+        legacyId: `legacy-${args.input.id}`,
+        name: args.input.name || 'Updated Course',
+        description: args.input.description,
+        code: args.input.code,
+        title: args.input.title,
+        learningMode: args.input.learningMode,
+        lifecycleState: 'ACTIVE',
+        updatedAt: now,
+      },
     };
   },
   
-  deleteCourseTemplate: (parent, args, context) => {
-    // Return true to indicate successful deletion
+  deleteCourseTemplate: () => {
     return true;
   },
   
-  // CourseTemplate content management - Add
-  courseTemplateAddLmsContentTypeResource: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  // CourseTemplate LMS Content - Add
+  courseTemplateAddLmsContentTypeResource: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  courseTemplateAddLmsContentTypeExternal: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  courseTemplateAddLmsContentTypeExternal: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  courseTemplateAddLmsContentTypeSeparator: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  courseTemplateAddLmsContentTypeSeparator: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  // CourseTemplate content management - Update
-  courseTemplateUpdateLmsContentTypeResource: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  // CourseTemplate LMS Content - Update
+  courseTemplateUpdateLmsContentTypeResource: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  courseTemplateUpdateLmsContentTypeExternal: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  courseTemplateUpdateLmsContentTypeExternal: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  courseTemplateUpdateLmsContentTypeSeparator: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  courseTemplateUpdateLmsContentTypeSeparator: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  // CourseTemplate content management - Remove
-  courseTemplateRemoveLmsContentType: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  // CourseTemplate LMS Content - Remove
+  courseTemplateRemoveLmsContentType: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
   // AchievementType CRUD (standalone)
-  createAchievementType: (parent, args, context) => {
-    const now = new Date().toISOString();
+  createAchievementType: (parent, args) => {
+    const now = generateTimestamp();
+    const id = generateId('achievement');
     return {
-      id: `achievement-${Date.now()}`,
-      name: args.input.name,
-      description: args.input.description,
-      points: args.input.points,
-      badgeUrl: args.input.badgeUrl,
-      createdAt: now,
+      errors: [],
+      achievementType: {
+        id,
+        legacyId: `legacy-${id}`,
+        name: args.input.name,
+        description: args.input.description || null,
+        points: args.input.points || null,
+        badgeUrl: args.input.badgeUrl || null,
+        createdAt: now,
+        updatedAt: now,
+      },
     };
   },
   
-  updateAchievementType: (parent, args, context) => {
+  updateAchievementType: (parent, args) => {
+    const now = generateTimestamp();
     return {
-      id: args.id,
-      name: args.input.name,
-      description: args.input.description,
-      points: args.input.points,
-      badgeUrl: args.input.badgeUrl,
+      errors: [],
+      achievementType: {
+        id: args.input.id,
+        legacyId: `legacy-${args.input.id}`,
+        name: args.input.name || 'Updated Achievement',
+        description: args.input.description,
+        points: args.input.points,
+        badgeUrl: args.input.badgeUrl,
+        updatedAt: now,
+      },
     };
   },
   
-  deleteAchievementType: (parent, args, context) => {
+  deleteAchievementType: () => {
     return true;
   },
   
-  // CourseTemplate achievement management
-  courseTemplateAddAchievementType: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  // CourseTemplate AchievementType management
+  courseTemplateAddAchievementType: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
   
-  courseTemplateRemoveAchievementType: (parent, args, context) => {
-    return { id: args.courseTemplateId };
+  courseTemplateRemoveAchievementType: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
+  },
+  
+  courseTemplateUpdateAchievementType: (parent, args) => {
+    const now = generateTimestamp();
+    return {
+      errors: [],
+      courseTemplate: {
+        id: args.courseTemplateId,
+        legacyId: `legacy-${args.courseTemplateId}`,
+        name: 'Course Template',
+        lifecycleState: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now,
+      },
+    };
   },
 };
 
@@ -144,11 +327,44 @@ export const mutationResolvers = {
  */
 export const fieldResolvers = {
   CourseTemplate: {
-    // Customize lmsContentTypes if needed
-    // lmsContentTypes: (parent) => [],
+    // Ensure legacyId is always present
+    legacyId: (parent) => {
+      return parent.legacyId || `legacy-${parent.id}`;
+    },
     
-    // Customize achievementTypes if needed
-    // achievementTypes: (parent) => [],
+    // Default lifecycleState if not provided
+    lifecycleState: (parent) => {
+      return parent.lifecycleState || 'ACTIVE';
+    },
+  },
+  
+  AchievementType: {
+    legacyId: (parent) => {
+      return parent.legacyId || `legacy-${parent.id}`;
+    },
+  },
+  
+  LmsResourceType: {
+    legacyId: (parent) => {
+      return parent.legacyId || `legacy-${parent.id}`;
+    },
+    autoComplete: (parent) => {
+      return parent.autoComplete !== undefined ? parent.autoComplete : false;
+    },
+  },
+  
+  LmsExternalType: {
+    legacyId: (parent) => {
+      return parent.legacyId || `legacy-${parent.id}`;
+    },
+    autoComplete: (parent) => {
+      return parent.autoComplete !== undefined ? parent.autoComplete : false;
+    },
+  },
+  
+  LmsSeparatorType: {
+    legacyId: (parent) => {
+      return parent.legacyId || `legacy-${parent.id}`;
+    },
   },
 };
-

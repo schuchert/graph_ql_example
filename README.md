@@ -1,14 +1,16 @@
-# GraphQL Mock Server
+# Administrate DX GraphQL Mock Server
 
-A well-factored GraphQL mock server for integration testing using [graphql-mocks](https://www.graphql-mocks.com/).
+A comprehensive, well-factored GraphQL mock server for integration testing using [graphql-mocks](https://www.graphql-mocks.com/). This server simulates the Administrate DX API based on the official API documentation.
 
 ## Features
 
 - 🚀 Mock GraphQL API server running on localhost
 - 📊 Built-in GraphiQL interface for testing queries
-- 🎯 Simulated entities based on CourseTemplate and LMS content types
-- 💾 Stateful mutations using graphql-paper in-memory store
+- 🎯 Complete Administrate DX schema simulation
+- 📚 Full entity coverage: CourseTemplate, AchievementType, LMS Content Types
+- 🔄 Comprehensive mutations for all entities
 - 🔧 Well-factored, modular code structure
+- 📖 Based on official Administrate DX API documentation
 
 ## Project Structure
 
@@ -19,10 +21,17 @@ graph_ql/
 │   ├── schema.js           # Schema loader
 │   ├── handler.js          # GraphQL handler configuration
 │   ├── server.js           # HTTP server setup
-│   └── mocks/
-│       └── resolvers.js    # Custom resolver functions
+│   ├── mocks/
+│   │   └── resolvers.js    # Custom resolver functions
+│   └── utils/
+│       └── helpers.js      # Utility functions
+├── scripts/                # Example query and mutation scripts
+│   ├── query-*.sh         # Query examples
+│   ├── mutation-*.sh      # Mutation examples
+│   └── README.md          # Scripts documentation
 ├── package.json
-└── README.md
+├── README.md
+└── MUTATIONS.md           # Complete mutations reference
 ```
 
 ## Installation
@@ -65,34 +74,101 @@ The server will start on `http://localhost:4000` (or the port specified in `PORT
 
 ## Example Queries
 
-### Query Course Templates
+### Query Course Templates with Pagination
 
 ```graphql
 query {
   courseTemplates {
-    id
-    name
-    description
-    lmsContentTypes {
-      ... on LmsResourceType {
+    edges {
+      node {
         id
+        name
+        description
+        code
         title
-        resourceUrl
-      }
-      ... on LmsExternalType {
-        id
-        title
-        externalUrl
-      }
-      ... on LmsSeparatorType {
-        id
-        title
+        learningMode
+        lifecycleState
+        createdAt
+        updatedAt
+        lmsContents {
+          edges {
+            node {
+              ... on LmsResourceType {
+                id
+                title
+                description
+                resourceUrl
+                order
+                autoComplete
+              }
+              ... on LmsExternalType {
+                id
+                title
+                description
+                externalUrl
+                order
+              }
+              ... on LmsSeparatorType {
+                id
+                title
+                order
+              }
+            }
+          }
+        }
+        achievementTypes {
+          edges {
+            node {
+              achievementType {
+                id
+                name
+                description
+                points
+                badgeUrl
+              }
+              autoAward
+            }
+          }
+        }
       }
     }
-    achievementTypes {
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+```
+
+### Create Course Template
+
+```graphql
+mutation {
+  createCourseTemplate(
+    input: {
+      name: "Advanced GraphQL"
+      description: "Complete course on GraphQL"
+      code: "GRP-101"
+      title: "Advanced GraphQL Course"
+      learningMode: LMS
+    }
+  ) {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
       id
       name
-      points
+      description
+      code
+      title
+      learningMode
+      lifecycleState
+      createdAt
+      updatedAt
     }
   }
 }
@@ -109,22 +185,53 @@ mutation {
       description: "Learn the basics of GraphQL"
       resourceUrl: "https://example.com/resource"
       order: 1
+      autoComplete: true
+      displayName: "Intro Video"
     }
   ) {
-    id
-    name
-    lmsContentTypes {
-      ... on LmsResourceType {
-        id
-        title
-        resourceUrl
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
 ```
 
-### Add Achievement Type
+### Create Achievement Type (Standalone)
+
+```graphql
+mutation {
+  createAchievementType(
+    input: {
+      name: "GraphQL Expert"
+      description: "Mastered GraphQL"
+      points: 100
+      badgeUrl: "https://example.com/badge.png"
+    }
+  ) {
+    errors {
+      field
+      message
+    }
+    achievementType {
+      id
+      name
+      description
+      points
+      badgeUrl
+      createdAt
+      updatedAt
+    }
+  }
+}
+```
+
+### Add Achievement Type to Course Template
 
 ```graphql
 mutation {
@@ -135,13 +242,28 @@ mutation {
       description: "Completed all GraphQL modules"
       points: 100
       badgeUrl: "https://example.com/badge.png"
+      autoAward: true
     }
   ) {
-    id
-    achievementTypes {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
       id
       name
-      points
+      achievementTypes {
+        edges {
+          node {
+            achievementType {
+              id
+              name
+              points
+            }
+            autoAward
+          }
+        }
+      }
     }
   }
 }
@@ -149,14 +271,66 @@ mutation {
 
 ## Schema Overview
 
-The mock server simulates the following entities:
+The mock server provides a complete simulation of the Administrate DX API with the following entities:
 
-- **CourseTemplate**: Represents a course template with LMS content and achievements
-- **LmsContentType** (Union): Can be Resource, External, or Separator
-  - **LmsResourceType**: Internal resource content
+### Core Entities
+
+- **CourseTemplate**: Course templates with full metadata (name, code, title, learningMode, lifecycleState, etc.)
+- **AchievementType**: Achievement/badge system with points, badges, and certificate types
+- **LmsContent** (Union): LMS content types
+  - **LmsResourceType**: Internal resource content with documents and auto-completion
   - **LmsExternalType**: External link content
   - **LmsSeparatorType**: Visual separator in course structure
-- **AchievementType**: Achievement/badge system for courses
+- **CourseTemplateAchievementType**: Join table linking courses to achievements
+
+### Supporting Types
+
+- **CertificateType**: Certificate types for achievements
+- **Document**: Document management system integration
+- **CustomFieldValue**: Custom field values
+- **ExternalId**: External ID tracking
+- **ExternalLog**: External integration logging
+- **ContentComment**: Comments on LMS content
+
+### Features
+
+- **Pagination**: All list queries support cursor-based pagination via Connection types
+- **Filtering**: Comprehensive filtering support with FilterOperation enums
+- **Ordering**: Field-based ordering with ASC/DESC direction
+- **Error Handling**: Mutations return structured error responses
+- **Lifecycle Management**: Support for DRAFT, ACTIVE, ARCHIVED states
+- **Learning Modes**: CLASSROOM, LMS, BLENDED, VIRTUAL modes
+
+### Mutations
+
+The schema includes complete CRUD operations for all entities:
+
+- **CourseTemplate**: create, update, delete
+- **AchievementType**: create, update, delete (standalone)
+- **LMS Content**: add (Resource/External/Separator), update, remove
+- **CourseTemplate AchievementType**: add, update, remove
+
+## Example Scripts
+
+The `scripts/` directory contains ready-to-use shell scripts for common queries and mutations:
+
+### Quick Examples
+
+```bash
+# Query all course templates
+./scripts/query-course-templates.sh
+
+# Create a course template
+./scripts/mutation-create-course-template.sh "GraphQL Basics" "Learn GraphQL" "GRP-101" LMS
+
+# Add LMS content
+./scripts/mutation-add-lms-resource.sh "template-id" "Introduction Video" "Watch this first" "https://example.com/video" 1
+
+# Create an achievement type
+./scripts/mutation-create-achievement-type.sh "GraphQL Expert" "Mastered GraphQL" 100
+```
+
+See `scripts/README.md` for complete documentation of all available scripts.
 
 ## Customization
 
@@ -167,6 +341,13 @@ Edit `src/mocks/resolvers.js` to customize the behavior of queries and mutations
 ### Modifying the Schema
 
 Update `src/schema.graphql` to add new types, queries, or mutations. The schema will be automatically reloaded when using `npm run dev`.
+
+### Creating New Scripts
+
+Add new scripts to the `scripts/` directory following the existing pattern. All scripts should:
+- Accept command-line arguments for parameters
+- Support `GRAPHQL_URL` environment variable
+- Output JSON formatted results using `python3 -m json.tool`
 
 ## Development
 

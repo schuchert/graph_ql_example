@@ -1,177 +1,512 @@
+# Administrate DX GraphQL Schema
+# Based on the Administrate DX API documentation
+
 type Query {
-  courseTemplates: [CourseTemplate!]!
+  # CourseTemplate queries
+  courseTemplates(
+    filters: [CourseTemplateFieldGraphFilter]
+    order: CourseTemplateFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): CourseTemplateConnection!
+  
   courseTemplate(id: ID!): CourseTemplate
-  achievementTypes: [AchievementType!]!
+  
+  # AchievementType queries
+  achievementTypes(
+    filters: [AchievementTypeFieldGraphFilter]
+    order: AchievementTypeFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): AchievementTypeConnection!
+  
   achievementType(id: ID!): AchievementType
+  
+  # LMS Content queries
+  lmsContents(
+    filters: [ContentFieldGraphFilter]
+    order: ContentFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): LmsContentConnection!
+  
+  lmsContent(id: ID!): LmsContent
 }
 
 type Mutation {
   # CourseTemplate mutations
   createCourseTemplate(
-    input: CreateCourseTemplateInput!
-  ): CourseTemplate!
+    input: CourseTemplateCreateInput!
+  ): CourseTemplateMutateResponse!
   
   updateCourseTemplate(
-    id: ID!
-    input: UpdateCourseTemplateInput!
-  ): CourseTemplate!
+    input: CourseTemplateUpdateInput!
+  ): CourseTemplateMutateResponse!
   
   deleteCourseTemplate(
     id: ID!
   ): Boolean!
   
-  # CourseTemplate content management
+  # CourseTemplate LMS Content mutations
   courseTemplateAddLmsContentTypeResource(
     courseTemplateId: ID!
-    input: LmsResourceTypeResourceInput!
-  ): CourseTemplate!
+    input: CourseTemplateAddLmsContentTypeResourceInput!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateAddLmsContentTypeExternal(
     courseTemplateId: ID!
-    input: LmsResourceTypeExternalInput!
-  ): CourseTemplate!
+    input: CourseTemplateAddLmsContentTypeExternalInput!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateAddLmsContentTypeSeparator(
     courseTemplateId: ID!
-    input: LmsResourceTypeSeparatorInput!
-  ): CourseTemplate!
+    input: CourseTemplateAddLmsContentTypeSeparatorInput!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateRemoveLmsContentType(
     courseTemplateId: ID!
     contentId: ID!
-  ): CourseTemplate!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateUpdateLmsContentTypeResource(
     courseTemplateId: ID!
     contentId: ID!
-    input: UpdateLmsResourceTypeResourceInput!
-  ): CourseTemplate!
+    input: CourseTemplateUpdateLmsContentTypeResourceInput!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateUpdateLmsContentTypeExternal(
     courseTemplateId: ID!
     contentId: ID!
-    input: UpdateLmsResourceTypeExternalInput!
-  ): CourseTemplate!
+    input: CourseTemplateUpdateLmsContentTypeExternalInput!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateUpdateLmsContentTypeSeparator(
     courseTemplateId: ID!
     contentId: ID!
-    input: UpdateLmsResourceTypeSeparatorInput!
-  ): CourseTemplate!
+    input: CourseTemplateUpdateLmsContentTypeSeparatorInput!
+  ): CourseTemplateMutateResponse!
   
-  # AchievementType mutations (standalone)
+  # AchievementType mutations
   createAchievementType(
-    input: CreateAchievementTypeInput!
-  ): AchievementType!
+    input: AchievementTypeCreateInput!
+  ): AchievementTypeMutateResponse!
   
   updateAchievementType(
-    id: ID!
-    input: UpdateAchievementTypeInput!
-  ): AchievementType!
+    input: AchievementTypeUpdateInput!
+  ): AchievementTypeMutateResponse!
   
   deleteAchievementType(
     id: ID!
   ): Boolean!
   
-  # CourseTemplate achievement management
+  # CourseTemplate AchievementType mutations
   courseTemplateAddAchievementType(
     courseTemplateId: ID!
     input: CourseTemplateAddAchievementTypeInput!
-  ): CourseTemplate!
+  ): CourseTemplateMutateResponse!
   
   courseTemplateRemoveAchievementType(
     courseTemplateId: ID!
-    achievementId: ID!
-  ): CourseTemplate!
+    achievementTypeId: ID!
+  ): CourseTemplateMutateResponse!
+  
+  courseTemplateUpdateAchievementType(
+    courseTemplateId: ID!
+    achievementTypeId: ID!
+    input: CourseTemplateUpdateAchievementTypeInput!
+  ): CourseTemplateMutateResponse!
 }
 
+# CourseTemplate Type
 type CourseTemplate {
   id: ID!
+  legacyId: String!
   name: String!
   description: String
-  lmsContentTypes: [LmsContentType!]!
-  achievementTypes: [AchievementType!]!
+  code: String
+  title: String
+  learningMode: LearningMode
+  lifecycleState: LifecycleState!
+  createdAt: String!
+  updatedAt: String!
+  
+  # Relationships
+  achievementTypes(
+    filters: [CourseTemplateAchievementTypeFieldGraphFilter]
+    order: CourseTemplateAchievementTypeFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): CourseTemplateAchievementTypeConnection
+  
+  lmsContents(
+    filters: [ContentFieldGraphFilter]
+    order: ContentFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): LmsContentConnection
+  
+  externalIds: [ExternalId!]!
+  externalLogs(
+    filters: [ExternalLogFieldGraphFilter]
+    order: ExternalLogFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ExternalLogConnection
+}
+
+# AchievementType Type
+type AchievementType {
+  id: ID!
+  legacyId: String!
+  name: String!
+  description: String
+  points: Int
+  badgeUrl: String
+  certificateType: CertificateType
+  createdAt: String!
+  updatedAt: String!
+  
+  # Relationships
+  certificateTypes(
+    filters: [CertificateTypeFieldGraphFilter]
+    order: CertificateTypeFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): CertificateTypeConnection!
+  
+  externalIds: [ExternalId!]!
+  externalLogs(
+    filters: [ExternalLogFieldGraphFilter]
+    order: ExternalLogFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ExternalLogConnection
+}
+
+# LMS Content Union Type
+union LmsContent = LmsResourceType | LmsExternalType | LmsSeparatorType
+
+# LmsResourceType - Internal resource content
+type LmsResourceType {
+  id: ID!
+  legacyId: String!
+  title: String!
+  description: String
+  resourceUrl: String
+  order: Int!
+  autoComplete: Boolean!
+  displayName: String
+  createdAt: String!
+  updatedAt: String!
+  
+  # Relationships
+  document: Document
+  customFieldValues: [CustomFieldValue!]!
+  comments(
+    filters: [ContentCommentFieldGraphFilter]
+    order: ContentCommentFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ContentCommentConnection!
+  
+  externalIds: [ExternalId!]!
+  externalLogs(
+    filters: [ExternalLogFieldGraphFilter]
+    order: ExternalLogFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ExternalLogConnection
+}
+
+# LmsExternalType - External link content
+type LmsExternalType {
+  id: ID!
+  legacyId: String!
+  title: String!
+  description: String
+  externalUrl: String!
+  order: Int!
+  autoComplete: Boolean!
+  displayName: String
+  createdAt: String!
+  updatedAt: String!
+  
+  # Relationships
+  customFieldValues: [CustomFieldValue!]!
+  comments(
+    filters: [ContentCommentFieldGraphFilter]
+    order: ContentCommentFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ContentCommentConnection!
+  
+  externalIds: [ExternalId!]!
+  externalLogs(
+    filters: [ExternalLogFieldGraphFilter]
+    order: ExternalLogFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ExternalLogConnection
+}
+
+# LmsSeparatorType - Visual separator
+type LmsSeparatorType {
+  id: ID!
+  legacyId: String!
+  title: String!
+  order: Int!
+  createdAt: String!
+  updatedAt: String!
+  
+  # Relationships
+  externalIds: [ExternalId!]!
+  externalLogs(
+    filters: [ExternalLogFieldGraphFilter]
+    order: ExternalLogFieldGraphOrder
+    first: Int
+    offset: Int
+    after: String
+  ): ExternalLogConnection
+}
+
+# CourseTemplate AchievementType Join Type
+type CourseTemplateAchievementType {
+  id: ID!
+  courseTemplate: CourseTemplate!
+  achievementType: AchievementType!
+  autoAward: Boolean!
   createdAt: String!
   updatedAt: String!
 }
 
-union LmsContentType = LmsResourceType | LmsExternalType | LmsSeparatorType
-
-type LmsResourceType {
+# Supporting Types
+type CertificateType {
   id: ID!
+  name: String!
+  description: String
+}
+
+type Document {
+  id: ID!
+  name: String!
+  url: String
+  fileSize: Int
+  mimeType: String
+}
+
+type CustomFieldValue {
+  id: ID!
+  customFieldDefinitionId: ID!
+  value: String
+}
+
+type ExternalId {
+  name: String!
+  value: String
+}
+
+type ExternalLog {
+  id: ID!
+  externalId: String!
+  status: String!
+  message: String
+  createdAt: String!
+}
+
+type ContentComment {
+  id: ID!
+  content: LmsContent!
+  comment: String!
+  createdAt: String!
+}
+
+# Connection Types (for pagination)
+type CourseTemplateConnection {
+  edges: [CourseTemplateEdge!]!
+  pageInfo: PageInfo!
+}
+
+type CourseTemplateEdge {
+  cursor: String!
+  node: CourseTemplate!
+}
+
+type AchievementTypeConnection {
+  edges: [AchievementTypeEdge!]!
+  pageInfo: PageInfo!
+}
+
+type AchievementTypeEdge {
+  cursor: String!
+  node: AchievementType!
+}
+
+type LmsContentConnection {
+  edges: [LmsContentEdge!]!
+  pageInfo: PageInfo!
+}
+
+type LmsContentEdge {
+  cursor: String!
+  node: LmsContent!
+}
+
+type CourseTemplateAchievementTypeConnection {
+  edges: [CourseTemplateAchievementTypeEdge!]!
+  pageInfo: PageInfo!
+}
+
+type CourseTemplateAchievementTypeEdge {
+  cursor: String!
+  node: CourseTemplateAchievementType!
+}
+
+type CertificateTypeConnection {
+  edges: [CertificateTypeEdge!]!
+  pageInfo: PageInfo!
+}
+
+type CertificateTypeEdge {
+  cursor: String!
+  node: CertificateType!
+}
+
+type ExternalLogConnection {
+  edges: [ExternalLogEdge!]!
+  pageInfo: PageInfo!
+}
+
+type ExternalLogEdge {
+  cursor: String!
+  node: ExternalLog!
+}
+
+type ContentCommentConnection {
+  edges: [ContentCommentEdge!]!
+  pageInfo: PageInfo!
+}
+
+type ContentCommentEdge {
+  cursor: String!
+  node: ContentComment!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+# Response Types
+type CourseTemplateMutateResponse {
+  errors: [FieldError!]!
+  courseTemplate: CourseTemplate
+}
+
+type AchievementTypeMutateResponse {
+  errors: [FieldError!]!
+  achievementType: AchievementType
+}
+
+type FieldError {
+  field: String!
+  message: String!
+}
+
+# Input Types
+input CourseTemplateCreateInput {
+  name: String!
+  description: String
+  code: String
+  title: String
+  learningMode: LearningMode
+}
+
+input CourseTemplateUpdateInput {
+  id: ID!
+  name: String
+  description: String
+  code: String
+  title: String
+  learningMode: LearningMode
+}
+
+input CourseTemplateAddLmsContentTypeResourceInput {
   title: String!
   description: String
   resourceUrl: String
-  order: Int!
-  createdAt: String!
+  order: Int
+  autoComplete: Boolean
+  displayName: String
+  documentId: ID
 }
 
-type LmsExternalType {
-  id: ID!
+input CourseTemplateAddLmsContentTypeExternalInput {
   title: String!
   description: String
   externalUrl: String!
-  order: Int!
-  createdAt: String!
+  order: Int
+  autoComplete: Boolean
+  displayName: String
 }
 
-type LmsSeparatorType {
-  id: ID!
+input CourseTemplateAddLmsContentTypeSeparatorInput {
   title: String!
-  order: Int!
-  createdAt: String!
+  order: Int
 }
 
-type AchievementType {
-  id: ID!
-  name: String!
-  description: String
-  points: Int
-  badgeUrl: String
-  createdAt: String!
-}
-
-input LmsResourceTypeResourceInput {
-  title: String!
+input CourseTemplateUpdateLmsContentTypeResourceInput {
+  title: String
   description: String
   resourceUrl: String
   order: Int
+  autoComplete: Boolean
+  displayName: String
+  documentId: ID
 }
 
-input LmsResourceTypeExternalInput {
-  title: String!
+input CourseTemplateUpdateLmsContentTypeExternalInput {
+  title: String
   description: String
-  externalUrl: String!
+  externalUrl: String
+  order: Int
+  autoComplete: Boolean
+  displayName: String
+}
+
+input CourseTemplateUpdateLmsContentTypeSeparatorInput {
+  title: String
   order: Int
 }
 
-input LmsResourceTypeSeparatorInput {
-  title: String!
-  order: Int
-}
-
-input CreateCourseTemplateInput {
-  name: String!
-  description: String
-}
-
-input UpdateCourseTemplateInput {
-  name: String
-  description: String
-}
-
-input CreateAchievementTypeInput {
+input AchievementTypeCreateInput {
   name: String!
   description: String
   points: Int
   badgeUrl: String
+  certificateTypeId: ID
 }
 
-input UpdateAchievementTypeInput {
+input AchievementTypeUpdateInput {
+  id: ID!
   name: String
   description: String
   points: Int
   badgeUrl: String
+  certificateTypeId: ID
 }
 
 input CourseTemplateAddAchievementTypeInput {
@@ -179,24 +514,194 @@ input CourseTemplateAddAchievementTypeInput {
   description: String
   points: Int
   badgeUrl: String
+  autoAward: Boolean
+  certificateTypeId: ID
 }
 
-input UpdateLmsResourceTypeResourceInput {
-  title: String
-  description: String
-  resourceUrl: String
-  order: Int
+input CourseTemplateUpdateAchievementTypeInput {
+  autoAward: Boolean
+  points: Int
+  badgeUrl: String
 }
 
-input UpdateLmsResourceTypeExternalInput {
-  title: String
-  description: String
-  externalUrl: String
-  order: Int
+# Filter and Order Types
+input CourseTemplateFieldGraphFilter {
+  field: CourseTemplateField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
 }
 
-input UpdateLmsResourceTypeSeparatorInput {
-  title: String
-  order: Int
+input CourseTemplateFieldGraphOrder {
+  field: CourseTemplateField!
+  direction: OrderDirection!
 }
 
+input AchievementTypeFieldGraphFilter {
+  field: AchievementTypeField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
+}
+
+input AchievementTypeFieldGraphOrder {
+  field: AchievementTypeField!
+  direction: OrderDirection!
+}
+
+input ContentFieldGraphFilter {
+  field: ContentField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
+}
+
+input ContentFieldGraphOrder {
+  field: ContentField!
+  direction: OrderDirection!
+}
+
+input CourseTemplateAchievementTypeFieldGraphFilter {
+  field: CourseTemplateAchievementTypeField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
+}
+
+input CourseTemplateAchievementTypeFieldGraphOrder {
+  field: CourseTemplateAchievementTypeField!
+  direction: OrderDirection!
+}
+
+input CertificateTypeFieldGraphFilter {
+  field: CertificateTypeField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
+}
+
+input CertificateTypeFieldGraphOrder {
+  field: CertificateTypeField!
+  direction: OrderDirection!
+}
+
+input ExternalLogFieldGraphFilter {
+  field: ExternalLogField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
+}
+
+input ExternalLogFieldGraphOrder {
+  field: ExternalLogField!
+  direction: OrderDirection!
+}
+
+input ContentCommentFieldGraphFilter {
+  field: ContentCommentField!
+  operation: FilterOperation!
+  value: String
+  values: [String]
+}
+
+input ContentCommentFieldGraphOrder {
+  field: ContentCommentField!
+  direction: OrderDirection!
+}
+
+# Enums
+enum CourseTemplateField {
+  id
+  name
+  code
+  title
+  description
+  learningMode
+  lifecycleState
+  createdAt
+  updatedAt
+}
+
+enum AchievementTypeField {
+  id
+  name
+  description
+  points
+  badgeUrl
+  createdAt
+  updatedAt
+}
+
+enum ContentField {
+  id
+  title
+  description
+  order
+  autoComplete
+  displayName
+  createdAt
+  updatedAt
+}
+
+enum CourseTemplateAchievementTypeField {
+  id
+  autoAward
+  createdAt
+  updatedAt
+}
+
+enum CertificateTypeField {
+  id
+  name
+  description
+}
+
+enum ExternalLogField {
+  id
+  externalId
+  status
+  message
+  createdAt
+}
+
+enum ContentCommentField {
+  id
+  comment
+  createdAt
+}
+
+enum FilterOperation {
+  EQUALS
+  NOT_EQUALS
+  IN
+  NOT_IN
+  CONTAINS
+  NOT_CONTAINS
+  STARTS_WITH
+  ENDS_WITH
+  GREATER_THAN
+  LESS_THAN
+  GREATER_THAN_OR_EQUAL
+  LESS_THAN_OR_EQUAL
+}
+
+enum OrderDirection {
+  ASC
+  DESC
+}
+
+enum LearningMode {
+  CLASSROOM
+  LMS
+  BLENDED
+  VIRTUAL
+}
+
+enum LifecycleState {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+# Note: TimeZonedDateTime is represented as String (ISO 8601 format)
+# In a real implementation, you would define a custom scalar type

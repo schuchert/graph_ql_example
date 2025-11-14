@@ -1,6 +1,6 @@
 # GraphQL Mutations Reference
 
-Complete reference for all mutations available in the GraphQL mock server.
+Complete reference for all mutations available in the Administrate DX GraphQL mock server.
 
 ## CourseTemplate Mutations
 
@@ -12,13 +12,27 @@ mutation {
     input: {
       name: "Introduction to GraphQL"
       description: "Learn the fundamentals of GraphQL"
+      code: "GRP-101"
+      title: "Introduction to GraphQL Course"
+      learningMode: LMS
     }
   ) {
-    id
-    name
-    description
-    createdAt
-    updatedAt
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      legacyId
+      name
+      description
+      code
+      title
+      learningMode
+      lifecycleState
+      createdAt
+      updatedAt
+    }
   }
 }
 ```
@@ -28,16 +42,29 @@ mutation {
 ```graphql
 mutation {
   updateCourseTemplate(
-    id: "template-123"
     input: {
+      id: "template-123"
       name: "Advanced GraphQL"
       description: "Updated description"
+      code: "GRP-201"
+      title: "Advanced GraphQL Course"
+      learningMode: BLENDED
     }
   ) {
-    id
-    name
-    description
-    updatedAt
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      description
+      code
+      title
+      learningMode
+      lifecycleState
+      updatedAt
+    }
   }
 }
 ```
@@ -63,17 +90,19 @@ mutation {
       description: "Introduction to GraphQL concepts"
       resourceUrl: "https://example.com/resource"
       order: 1
+      autoComplete: true
+      displayName: "Intro Video"
+      documentId: "doc-456"
     }
   ) {
-    id
-    name
-    lmsContentTypes {
-      ... on LmsResourceType {
-        id
-        title
-        resourceUrl
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -90,16 +119,18 @@ mutation {
       description: "Link to external resources"
       externalUrl: "https://graphql.org"
       order: 2
+      autoComplete: false
+      displayName: "GraphQL Docs"
     }
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsExternalType {
-        id
-        title
-        externalUrl
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -116,13 +147,14 @@ mutation {
       order: 3
     }
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsSeparatorType {
-        id
-        title
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -140,16 +172,18 @@ mutation {
       description: "Updated description"
       resourceUrl: "https://example.com/new-resource"
       order: 5
+      autoComplete: false
+      displayName: "Updated Display Name"
     }
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsResourceType {
-        id
-        title
-        resourceUrl
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -164,18 +198,20 @@ mutation {
     contentId: "content-456"
     input: {
       title: "Updated External Link"
+      description: "Updated description"
       externalUrl: "https://new-url.com"
       order: 6
+      displayName: "New Link Name"
     }
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsExternalType {
-        id
-        title
-        externalUrl
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -193,13 +229,14 @@ mutation {
       order: 7
     }
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsSeparatorType {
-        id
-        title
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -213,20 +250,14 @@ mutation {
     courseTemplateId: "template-123"
     contentId: "content-456"
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsResourceType {
-        id
-        title
-      }
-      ... on LmsExternalType {
-        id
-        title
-      }
-      ... on LmsSeparatorType {
-        id
-        title
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -244,14 +275,23 @@ mutation {
       description: "Completed all GraphQL modules"
       points: 100
       badgeUrl: "https://example.com/badge.png"
+      certificateTypeId: "cert-123"
     }
   ) {
-    id
-    name
-    description
-    points
-    badgeUrl
-    createdAt
+    errors {
+      field
+      message
+    }
+    achievementType {
+      id
+      legacyId
+      name
+      description
+      points
+      badgeUrl
+      createdAt
+      updatedAt
+    }
   }
 }
 ```
@@ -261,19 +301,27 @@ mutation {
 ```graphql
 mutation {
   updateAchievementType(
-    id: "achievement-123"
     input: {
+      id: "achievement-123"
       name: "GraphQL Expert"
       description: "Updated description"
       points: 200
       badgeUrl: "https://example.com/new-badge.png"
+      certificateTypeId: "cert-456"
     }
   ) {
-    id
-    name
-    description
-    points
-    badgeUrl
+    errors {
+      field
+      message
+    }
+    achievementType {
+      id
+      name
+      description
+      points
+      badgeUrl
+      updatedAt
+    }
   }
 }
 ```
@@ -299,14 +347,57 @@ mutation {
       description: "Completed the course"
       points: 50
       badgeUrl: "https://example.com/completion-badge.png"
+      autoAward: true
+      certificateTypeId: "cert-123"
     }
   ) {
-    id
-    achievementTypes {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
       id
       name
-      points
-      badgeUrl
+      achievementTypes {
+        edges {
+          node {
+            id
+            achievementType {
+              id
+              name
+              points
+              badgeUrl
+            }
+            autoAward
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Update AchievementType on CourseTemplate
+
+```graphql
+mutation {
+  courseTemplateUpdateAchievementType(
+    courseTemplateId: "template-123"
+    achievementTypeId: "achievement-456"
+    input: {
+      autoAward: false
+      points: 150
+      badgeUrl: "https://example.com/updated-badge.png"
+    }
+  ) {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      updatedAt
     }
   }
 }
@@ -318,13 +409,16 @@ mutation {
 mutation {
   courseTemplateRemoveAchievementType(
     courseTemplateId: "template-123"
-    achievementId: "achievement-456"
+    achievementTypeId: "achievement-456"
   ) {
-    id
-    achievementTypes {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
       id
       name
-      points
+      updatedAt
     }
   }
 }
@@ -339,10 +433,22 @@ mutation CreateCourse {
     input: {
       name: "Full Stack Development"
       description: "Complete full stack course"
+      code: "FSD-101"
+      title: "Full Stack Development Course"
+      learningMode: BLENDED
     }
   ) {
-    id
-    name
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      code
+      learningMode
+      lifecycleState
+    }
   }
 }
 
@@ -352,53 +458,99 @@ mutation AddContent {
     courseTemplateId: "template-123"
     input: {
       title: "Module 1: Introduction"
+      description: "Introduction to full stack development"
       resourceUrl: "https://example.com/module1"
       order: 1
+      autoComplete: true
     }
   ) {
-    id
-    lmsContentTypes {
-      ... on LmsResourceType {
-        id
-        title
-        order
-      }
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
     }
   }
 }
 
-# 3. Add achievement to the course
+# 3. Add external link
+mutation AddExternalLink {
+  courseTemplateAddLmsContentTypeExternal(
+    courseTemplateId: "template-123"
+    input: {
+      title: "External Resources"
+      description: "Additional learning materials"
+      externalUrl: "https://example.com/resources"
+      order: 2
+    }
+  ) {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+    }
+  }
+}
+
+# 4. Add achievement to the course
 mutation AddAchievement {
   courseTemplateAddAchievementType(
     courseTemplateId: "template-123"
     input: {
       name: "Course Completion Badge"
+      description: "Awarded upon course completion"
       points: 100
+      badgeUrl: "https://example.com/badge.png"
+      autoAward: true
     }
   ) {
-    id
-    achievementTypes {
+    errors {
+      field
+      message
+    }
+    courseTemplate {
       id
-      name
-      points
+      achievementTypes {
+        edges {
+          node {
+            achievementType {
+              id
+              name
+              points
+            }
+            autoAward
+          }
+        }
+      }
     }
   }
 }
 
-# 4. Update the course
+# 5. Update the course
 mutation UpdateCourse {
   updateCourseTemplate(
-    id: "template-123"
     input: {
+      id: "template-123"
       name: "Updated Full Stack Development"
       description: "Updated course description"
+      code: "FSD-101-UPDATED"
     }
   ) {
-    id
-    name
-    description
-    updatedAt
+    errors {
+      field
+      message
+    }
+    courseTemplate {
+      id
+      name
+      description
+      code
+      updatedAt
+    }
   }
 }
 ```
-
