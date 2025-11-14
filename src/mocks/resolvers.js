@@ -37,13 +37,39 @@ export const queryResolvers = {
 /**
  * Custom resolvers for Mutation operations
  * 
- * These mutations return the updated CourseTemplate.
+ * These mutations return the updated entities.
  * In a real implementation, you would use the paper store to persist changes.
  */
 export const mutationResolvers = {
+  // CourseTemplate CRUD
+  createCourseTemplate: (parent, args, context) => {
+    const now = new Date().toISOString();
+    return {
+      id: `template-${Date.now()}`,
+      name: args.input.name,
+      description: args.input.description,
+      createdAt: now,
+      updatedAt: now,
+    };
+  },
+  
+  updateCourseTemplate: (parent, args, context) => {
+    const now = new Date().toISOString();
+    return {
+      id: args.id,
+      name: args.input.name,
+      description: args.input.description,
+      updatedAt: now,
+    };
+  },
+  
+  deleteCourseTemplate: (parent, args, context) => {
+    // Return true to indicate successful deletion
+    return true;
+  },
+  
+  // CourseTemplate content management - Add
   courseTemplateAddLmsContentTypeResource: (parent, args, context) => {
-    // Return the course template - graphql-mocks will mock the response
-    // In a real scenario, you'd add the resource to the paper store here
     return { id: args.courseTemplateId };
   },
   
@@ -55,7 +81,57 @@ export const mutationResolvers = {
     return { id: args.courseTemplateId };
   },
   
+  // CourseTemplate content management - Update
+  courseTemplateUpdateLmsContentTypeResource: (parent, args, context) => {
+    return { id: args.courseTemplateId };
+  },
+  
+  courseTemplateUpdateLmsContentTypeExternal: (parent, args, context) => {
+    return { id: args.courseTemplateId };
+  },
+  
+  courseTemplateUpdateLmsContentTypeSeparator: (parent, args, context) => {
+    return { id: args.courseTemplateId };
+  },
+  
+  // CourseTemplate content management - Remove
+  courseTemplateRemoveLmsContentType: (parent, args, context) => {
+    return { id: args.courseTemplateId };
+  },
+  
+  // AchievementType CRUD (standalone)
+  createAchievementType: (parent, args, context) => {
+    const now = new Date().toISOString();
+    return {
+      id: `achievement-${Date.now()}`,
+      name: args.input.name,
+      description: args.input.description,
+      points: args.input.points,
+      badgeUrl: args.input.badgeUrl,
+      createdAt: now,
+    };
+  },
+  
+  updateAchievementType: (parent, args, context) => {
+    return {
+      id: args.id,
+      name: args.input.name,
+      description: args.input.description,
+      points: args.input.points,
+      badgeUrl: args.input.badgeUrl,
+    };
+  },
+  
+  deleteAchievementType: (parent, args, context) => {
+    return true;
+  },
+  
+  // CourseTemplate achievement management
   courseTemplateAddAchievementType: (parent, args, context) => {
+    return { id: args.courseTemplateId };
+  },
+  
+  courseTemplateRemoveAchievementType: (parent, args, context) => {
     return { id: args.courseTemplateId };
   },
 };

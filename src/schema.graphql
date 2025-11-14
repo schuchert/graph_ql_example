@@ -6,6 +6,21 @@ type Query {
 }
 
 type Mutation {
+  # CourseTemplate mutations
+  createCourseTemplate(
+    input: CreateCourseTemplateInput!
+  ): CourseTemplate!
+  
+  updateCourseTemplate(
+    id: ID!
+    input: UpdateCourseTemplateInput!
+  ): CourseTemplate!
+  
+  deleteCourseTemplate(
+    id: ID!
+  ): Boolean!
+  
+  # CourseTemplate content management
   courseTemplateAddLmsContentTypeResource(
     courseTemplateId: ID!
     input: LmsResourceTypeResourceInput!
@@ -21,9 +36,52 @@ type Mutation {
     input: LmsResourceTypeSeparatorInput!
   ): CourseTemplate!
   
+  courseTemplateRemoveLmsContentType(
+    courseTemplateId: ID!
+    contentId: ID!
+  ): CourseTemplate!
+  
+  courseTemplateUpdateLmsContentTypeResource(
+    courseTemplateId: ID!
+    contentId: ID!
+    input: UpdateLmsResourceTypeResourceInput!
+  ): CourseTemplate!
+  
+  courseTemplateUpdateLmsContentTypeExternal(
+    courseTemplateId: ID!
+    contentId: ID!
+    input: UpdateLmsResourceTypeExternalInput!
+  ): CourseTemplate!
+  
+  courseTemplateUpdateLmsContentTypeSeparator(
+    courseTemplateId: ID!
+    contentId: ID!
+    input: UpdateLmsResourceTypeSeparatorInput!
+  ): CourseTemplate!
+  
+  # AchievementType mutations (standalone)
+  createAchievementType(
+    input: CreateAchievementTypeInput!
+  ): AchievementType!
+  
+  updateAchievementType(
+    id: ID!
+    input: UpdateAchievementTypeInput!
+  ): AchievementType!
+  
+  deleteAchievementType(
+    id: ID!
+  ): Boolean!
+  
+  # CourseTemplate achievement management
   courseTemplateAddAchievementType(
     courseTemplateId: ID!
     input: CourseTemplateAddAchievementTypeInput!
+  ): CourseTemplate!
+  
+  courseTemplateRemoveAchievementType(
+    courseTemplateId: ID!
+    achievementId: ID!
   ): CourseTemplate!
 }
 
@@ -92,10 +150,53 @@ input LmsResourceTypeSeparatorInput {
   order: Int
 }
 
+input CreateCourseTemplateInput {
+  name: String!
+  description: String
+}
+
+input UpdateCourseTemplateInput {
+  name: String
+  description: String
+}
+
+input CreateAchievementTypeInput {
+  name: String!
+  description: String
+  points: Int
+  badgeUrl: String
+}
+
+input UpdateAchievementTypeInput {
+  name: String
+  description: String
+  points: Int
+  badgeUrl: String
+}
+
 input CourseTemplateAddAchievementTypeInput {
   name: String!
   description: String
   points: Int
   badgeUrl: String
+}
+
+input UpdateLmsResourceTypeResourceInput {
+  title: String
+  description: String
+  resourceUrl: String
+  order: Int
+}
+
+input UpdateLmsResourceTypeExternalInput {
+  title: String
+  description: String
+  externalUrl: String
+  order: Int
+}
+
+input UpdateLmsResourceTypeSeparatorInput {
+  title: String
+  order: Int
 }
 
