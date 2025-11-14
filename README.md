@@ -97,18 +97,25 @@ docker run -d -p 5000:4000 administrate-dx-graphql-mock
 PORT=5000 docker-compose up -d
 ```
 
-### Publishing to Container Registry
+### Publishing to Docker Hub
+
+The image is published to `schuchert/administrate` on Docker Hub.
 
 ```bash
-# Tag for your registry
-docker tag administrate-dx-graphql-mock your-registry/administrate-dx-graphql-mock:latest
+# Build
+docker build -t schuchert/administrate:latest .
 
-# Push to registry
-docker push your-registry/administrate-dx-graphql-mock:latest
+# Login to Docker Hub (first time only)
+docker login
 
-# Run from registry
-docker run -d -p 4000:4000 your-registry/administrate-dx-graphql-mock:latest
+# Push to Docker Hub
+docker push schuchert/administrate:latest
+
+# Run from Docker Hub (single command)
+docker run -d -p 4000:4000 --name administrate-dx schuchert/administrate:latest
 ```
+
+See `DOCKER_HUB.md` for detailed publishing instructions.
 
 ## Usage
 
