@@ -317,17 +317,19 @@ The `scripts/` directory contains ready-to-use shell scripts for common queries 
 ### Quick Examples
 
 ```bash
-# Query all course templates
+echo "The State of the System==================="
 ./scripts/query-course-templates.sh
+echo "=========================================="
 
-# Create a course template
 ./scripts/mutation-create-course-template.sh "GraphQL Basics" "Learn GraphQL" "GRP-101" LMS
 
-# Add LMS content
 ./scripts/mutation-add-lms-resource.sh "template-id" "Introduction Video" "Watch this first" "https://example.com/video" 1
 
-# Create an achievement type
 ./scripts/mutation-create-achievement-type.sh "GraphQL Expert" "Mastered GraphQL" 100
+
+echo "The State of the System==================="
+./scripts/query-course-templates.sh
+echo "=========================================="
 ```
 
 See `scripts/README.md` for complete documentation of all available scripts.
