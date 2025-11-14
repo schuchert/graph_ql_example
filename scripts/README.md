@@ -146,23 +146,27 @@ Remove an achievement type from a course template.
 ## Complete Workflow Example
 
 ```bash
-# 1. Create a course template
+echo "The State of the System==================="
+./scripts/query-course-templates.sh
+echo "=========================================="
+
 TEMPLATE_ID=$(./mutation-create-course-template.sh "Full Stack Course" "Learn full stack" "FSD-101" LMS | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 echo "Created template: $TEMPLATE_ID"
 
-# 2. Add LMS content
 ./mutation-add-lms-resource.sh "$TEMPLATE_ID" "Module 1" "Introduction" "https://example.com/module1" 1
 ./mutation-add-lms-external.sh "$TEMPLATE_ID" "External Docs" "https://example.com/docs" "Additional resources" 2
 
-# 3. Create an achievement type
 ACHIEVEMENT_ID=$(./mutation-create-achievement-type.sh "Course Completion" "Completed the course" 100 | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
 echo "Created achievement: $ACHIEVEMENT_ID"
 
-# 4. Add achievement to course
 ./mutation-add-achievement-to-course.sh "$TEMPLATE_ID" "Course Completion" "Awarded on completion" 100 "https://example.com/badge.png" true
 
-# 5. Query the course template
 ./query-course-template.sh "$TEMPLATE_ID"
+
+echo "The State of the System==================="
+./scripts/query-course-templates.sh
+echo "=========================================="
+
 ```
 
 ## Environment Variables

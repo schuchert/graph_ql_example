@@ -36,6 +36,8 @@ graph_ql/
 
 ## Installation
 
+### Local Development
+
 ```bash
 npm install
 ```
@@ -50,9 +52,67 @@ npm install @graphql-mocks/handler @graphql-mocks/paper graphql
 
 Then update the imports in `src/handler.js` to use the scoped packages.
 
+## Docker
+
+### Building the Image
+
+```bash
+docker build -t administrate-dx-graphql-mock .
+```
+
+### Running with Docker
+
+```bash
+docker run -d \
+  --name graphql-mock-server \
+  -p 4000:4000 \
+  administrate-dx-graphql-mock
+```
+
+### Running with Docker Compose
+
+```bash
+# Start the server
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop the server
+docker-compose down
+
+# Rebuild and restart
+docker-compose up -d --build
+```
+
+### Custom Port
+
+To run on a different port:
+
+```bash
+# Docker
+docker run -d -p 5000:4000 administrate-dx-graphql-mock
+
+# Docker Compose
+PORT=5000 docker-compose up -d
+```
+
+### Publishing to Container Registry
+
+```bash
+# Tag for your registry
+docker tag administrate-dx-graphql-mock your-registry/administrate-dx-graphql-mock:latest
+
+# Push to registry
+docker push your-registry/administrate-dx-graphql-mock:latest
+
+# Run from registry
+docker run -d -p 4000:4000 your-registry/administrate-dx-graphql-mock:latest
+```
+
 ## Usage
 
-### Start the server
+### Start the server (Local)
 
 ```bash
 npm start

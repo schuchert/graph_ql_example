@@ -63,10 +63,12 @@ async function startServer() {
     res.end('Not Found');
   });
 
-  server.listen(PORT, () => {
-    console.log(`🚀 GraphQL Mock Server running at http://localhost:${PORT}/graphql`);
-    console.log(`📊 GraphiQL interface available at http://localhost:${PORT}/graphql`);
-    console.log(`❤️  Health check available at http://localhost:${PORT}/health`);
+  const HOST = process.env.HOST || '0.0.0.0';
+  
+  server.listen(PORT, HOST, () => {
+    console.log(`🚀 GraphQL Mock Server running at http://${HOST}:${PORT}/graphql`);
+    console.log(`📊 GraphiQL interface available at http://${HOST}:${PORT}/graphql`);
+    console.log(`❤️  Health check available at http://${HOST}:${PORT}/health`);
   });
 }
 
