@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-COPY node_modules ./
+COPY ./node_modules ./node_modules
 
 # Stage 2: Production image
 FROM node:20-alpine
