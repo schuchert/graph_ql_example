@@ -7,9 +7,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-
-# Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+COPY node_modules ./
 
 # Stage 2: Production image
 FROM node:20-alpine
