@@ -1,0 +1,13 @@
+graphql:
+  server:
+    url: http://localhost:4000
+
+spring:
+  application:
+    name: graphql-api-tests
+
+logging:
+  level:
+    com.administrate.graphql: DEBUG
+
+
