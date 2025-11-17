@@ -47,6 +47,10 @@ dependencies {
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation("org.assertj:assertj-core")
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("org.mockito:mockito-inline:5.2.0")
+    // ByteBuddy agent for Mockito (required for static mocking and final class mocking)
+    // Using the same version that mockito-inline depends on
+    testImplementation("net.bytebuddy:byte-buddy-agent")
 }
 
 tasks.withType<JavaCompile> {
@@ -60,6 +64,12 @@ tasks.withType<Test> {
         vendor.set(org.gradle.jvm.toolchain.JvmVendorSpec.AMAZON)
     })
     systemProperty("spring.classformat.ignore", "true")
+    
+    // Mockito agent for static mocking and final class mocking
+    val byteBuddyAgent = configurations.testRuntimeClasspath.get().files.find { it.name.contains("byte-buddy-agent") }
+    if (byteBuddyAgent != null) {
+        jvmArgs("-javaagent:${byteBuddyAgent.absolutePath}")
+    }
     
     // Disable test result caching - always run tests fresh after clean
     outputs.upToDateWhen { false }
