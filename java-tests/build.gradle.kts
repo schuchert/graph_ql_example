@@ -60,6 +60,16 @@ tasks.withType<Test> {
         vendor.set(org.gradle.jvm.toolchain.JvmVendorSpec.AMAZON)
     })
     systemProperty("spring.classformat.ignore", "true")
+    
+    // Disable test result caching - always run tests fresh after clean
+    outputs.upToDateWhen { false }
+    
+    // Show test output
+    testLogging {
+        events("passed", "skipped", "failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStandardStreams = true
+    }
 }
 
 tasks.named<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
@@ -76,5 +86,19 @@ tasks.named("resolveMainClassName") {
 
 tasks.named<Jar>("jar") {
     enabled = true
+}
+
+// Clean task - clear test results and cache
+tasks.named("clean") {
+    doLast {
+        delete("build/test-results")
+        delete("build/reports/tests")
+        delete("build/classes/java/test")
+        // Clear Gradle test cache
+        fileTree("${project.buildDir}").matching {
+            include("**/.gradle/**")
+        }.forEach { it.delete() }
+        println("Cleaned test results and cache - tests will run fresh on next test execution")
+    }
 }
 
