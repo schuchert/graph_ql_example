@@ -118,6 +118,9 @@ type Mutation {
     achievementTypeId: ID!
     input: CourseTemplateUpdateAchievementTypeInput!
   ): CourseTemplateMutateResponse!
+  
+  # Clear all data (for testing/development)
+  clearAllData: ClearAllDataResponse!
 }
 
 # CourseTemplate Type
@@ -705,3 +708,16 @@ enum LifecycleState {
 
 # Note: TimeZonedDateTime is represented as String (ISO 8601 format)
 # In a real implementation, you would define a custom scalar type
+
+# Clear All Data Response Types
+type ClearAllDataResponse {
+  success: Boolean!
+  message: String!
+  clearedCounts: ClearedCounts!
+}
+
+type ClearedCounts {
+  courseTemplates: Int!
+  achievementTypes: Int!
+  lmsContents: Int!
+}

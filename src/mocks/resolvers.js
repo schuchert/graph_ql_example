@@ -518,6 +518,27 @@ export const mutationResolvers = {
       courseTemplate,
     };
   },
+  
+  // Clear all data (for testing/development)
+  clearAllData: (parent, args) => {
+    const courseTemplateCount = courseTemplates.size;
+    const achievementTypeCount = achievementTypes.size;
+    const lmsContentCount = lmsContents.size;
+    
+    courseTemplates.clear();
+    achievementTypes.clear();
+    lmsContents.clear();
+    
+    return {
+      success: true,
+      message: 'All data cleared successfully',
+      clearedCounts: {
+        courseTemplates: courseTemplateCount,
+        achievementTypes: achievementTypeCount,
+        lmsContents: lmsContentCount,
+      },
+    };
+  },
 };
 
 /**

@@ -336,6 +336,26 @@ mutation {
 }
 ```
 
+### Clear All Data (Testing/Development)
+
+Clear all entities from the in-memory stores. Useful for resetting the server state during testing without restarting Docker.
+
+```graphql
+mutation {
+  clearAllData {
+    success
+    message
+    clearedCounts {
+      courseTemplates
+      achievementTypes
+      lmsContents
+    }
+  }
+}
+```
+
+This mutation clears all course templates, achievement types, and LMS contents, and returns the counts of what was cleared.
+
 ## Schema Overview
 
 The mock server provides a complete simulation of the Administrate DX API with the following entities:
@@ -376,6 +396,7 @@ The schema includes complete CRUD operations for all entities:
 - **AchievementType**: create, update, delete (standalone)
 - **LMS Content**: add (Resource/External/Separator), update, remove
 - **CourseTemplate AchievementType**: add, update, remove
+- **Data Management**: clearAllData (clears all entities for testing/development)
 
 ## Example Scripts
 
