@@ -2,19 +2,14 @@
  * Custom resolver functions for GraphQL mocks
  * These provide realistic mock data for integration testing
  * 
- * Uses in-memory stores to persist data across queries and mutations.
+ * Uses GraphQL Paper for in-memory data storage.
  */
 
 import { generateId, generateTimestamp } from '../utils/helpers.js';
 
-// In-memory data stores
-const courseTemplates = new Map();
-const achievementTypes = new Map();
-const lmsContents = new Map();
-
 // Helper to create connection structure
 function createConnection(items, args = {}) {
-  const allItems = Array.from(items.values());
+  const allItems = Array.isArray(items) ? items : Array.from(items.values());
   const edges = allItems.map(item => ({
     node: item,
     cursor: Buffer.from(item.id).toString('base64'),
@@ -32,519 +27,593 @@ function createConnection(items, args = {}) {
 }
 
 /**
- * Custom resolvers for Query operations
+ * Creates resolver functions with Paper store
  */
-export const queryResolvers = {
-  // CourseTemplate queries
-  courseTemplates: (parent, args) => {
-    return createConnection(courseTemplates, args);
-  },
-  
-  courseTemplate: (parent, args) => {
-    return courseTemplates.get(args.id) || null;
-  },
-  
-  // AchievementType queries
-  achievementTypes: (parent, args) => {
-    return createConnection(achievementTypes, args);
-  },
-  
-  achievementType: (parent, args) => {
-    return achievementTypes.get(args.id) || null;
-  },
-  
-  // LMS Content queries
-  lmsContents: (parent, args) => {
-    return createConnection(lmsContents, args);
-  },
-  
-  lmsContent: (parent, args) => {
-    return lmsContents.get(args.id) || null;
-  },
-};
+export function createResolvers(paper) {
+  const store = paper.store;
 
-/**
- * Custom resolvers for Mutation operations
- * 
- * These mutations store entities in memory and return response objects.
- */
-export const mutationResolvers = {
-  // CourseTemplate CRUD
-  createCourseTemplate: (parent, args) => {
-    const now = generateTimestamp();
-    const id = generateId('template');
-    const courseTemplate = {
-      id,
-      legacyId: `legacy-${id}`,
-      name: args.input.name,
-      description: args.input.description || null,
-      code: args.input.code || null,
-      title: args.input.title || args.input.name,
-      learningMode: args.input.learningMode || 'LMS',
-      lifecycleState: 'ACTIVE',
-      lmsContents: [],
-      achievementTypes: [],
-      createdAt: now,
-      updatedAt: now,
-    };
+  /**
+   * Custom resolvers for Query operations
+   */
+  const queryResolvers = {
+    // CourseTemplate queries
+    courseTemplates: (parent, args) => {
+      const items = store.list('CourseTemplate');
+      return createConnection(items, args);
+    },
     
-    courseTemplates.set(id, courseTemplate);
+    courseTemplate: (parent, args) => {
+      return store.get('CourseTemplate', args.id) || null;
+    },
     
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  updateCourseTemplate: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.input.id);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'id', message: `CourseTemplate with ID ${args.input.id} not found` }],
-        courseTemplate: null,
-      };
-    }
+    // AchievementType queries
+    achievementTypes: (parent, args) => {
+      const items = store.list('AchievementType');
+      return createConnection(items, args);
+    },
     
-    const now = generateTimestamp();
-    if (args.input.name !== undefined) courseTemplate.name = args.input.name;
-    if (args.input.description !== undefined) courseTemplate.description = args.input.description;
-    if (args.input.code !== undefined) courseTemplate.code = args.input.code;
-    if (args.input.title !== undefined) courseTemplate.title = args.input.title;
-    if (args.input.learningMode !== undefined) courseTemplate.learningMode = args.input.learningMode;
-    courseTemplate.updatedAt = now;
+    achievementType: (parent, args) => {
+      return store.get('AchievementType', args.id) || null;
+    },
     
-    courseTemplates.set(courseTemplate.id, courseTemplate);
+    // LMS Content queries
+    lmsContents: (parent, args) => {
+      // LMS Content is a union, so we need to get all types
+      const resources = store.list('LmsResourceType') || [];
+      const externals = store.list('LmsExternalType') || [];
+      const separators = store.list('LmsSeparatorType') || [];
+      const allItems = [...resources, ...externals, ...separators];
+      return createConnection(allItems, args);
+    },
     
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  deleteCourseTemplate: (parent, args) => {
-    const deleted = courseTemplates.delete(args.id);
-    return deleted;
-  },
-  
-  // CourseTemplate LMS Content - Add
-  courseTemplateAddLmsContentTypeResource: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    const contentId = generateId('lms-resource');
-    const content = {
-      id: contentId,
-      legacyId: `legacy-${contentId}`,
-      __typename: 'LmsResourceType',
-      title: args.input.title,
-      description: args.input.description || null,
-      resourceUrl: args.input.resourceUrl || null,
-      order: args.input.order || 0,
-      autoComplete: args.input.autoComplete !== undefined ? args.input.autoComplete : false,
-      displayName: args.input.displayName || null,
-      documentId: args.input.documentId || null,
-      createdAt: now,
-    };
-    
-    courseTemplate.lmsContents.push(content);
-    courseTemplate.updatedAt = now;
-    lmsContents.set(contentId, content);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  courseTemplateAddLmsContentTypeExternal: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    const contentId = generateId('lms-external');
-    const content = {
-      id: contentId,
-      legacyId: `legacy-${contentId}`,
-      __typename: 'LmsExternalType',
-      title: args.input.title,
-      description: args.input.description || null,
-      externalUrl: args.input.externalUrl,
-      order: args.input.order || 0,
-      autoComplete: args.input.autoComplete !== undefined ? args.input.autoComplete : false,
-      displayName: args.input.displayName || null,
-      createdAt: now,
-    };
-    
-    courseTemplate.lmsContents.push(content);
-    courseTemplate.updatedAt = now;
-    lmsContents.set(contentId, content);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  courseTemplateAddLmsContentTypeSeparator: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    const contentId = generateId('lms-separator');
-    const content = {
-      id: contentId,
-      legacyId: `legacy-${contentId}`,
-      __typename: 'LmsSeparatorType',
-      title: args.input.title,
-      order: args.input.order || 0,
-      createdAt: now,
-    };
-    
-    courseTemplate.lmsContents.push(content);
-    courseTemplate.updatedAt = now;
-    lmsContents.set(contentId, content);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  // CourseTemplate LMS Content - Update
-  courseTemplateUpdateLmsContentTypeResource: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const content = courseTemplate.lmsContents.find(c => c.id === args.contentId && c.__typename === 'LmsResourceType');
-    if (!content) {
-      return {
-        errors: [{ field: 'contentId', message: `LmsResourceType with ID ${args.contentId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    if (args.input.title !== undefined) content.title = args.input.title;
-    if (args.input.description !== undefined) content.description = args.input.description;
-    if (args.input.resourceUrl !== undefined) content.resourceUrl = args.input.resourceUrl;
-    if (args.input.order !== undefined) content.order = args.input.order;
-    if (args.input.autoComplete !== undefined) content.autoComplete = args.input.autoComplete;
-    if (args.input.displayName !== undefined) content.displayName = args.input.displayName;
-    if (args.input.documentId !== undefined) content.documentId = args.input.documentId;
-    
-    courseTemplate.updatedAt = now;
-    lmsContents.set(content.id, content);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  courseTemplateUpdateLmsContentTypeExternal: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const content = courseTemplate.lmsContents.find(c => c.id === args.contentId && c.__typename === 'LmsExternalType');
-    if (!content) {
-      return {
-        errors: [{ field: 'contentId', message: `LmsExternalType with ID ${args.contentId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    if (args.input.title !== undefined) content.title = args.input.title;
-    if (args.input.description !== undefined) content.description = args.input.description;
-    if (args.input.externalUrl !== undefined) content.externalUrl = args.input.externalUrl;
-    if (args.input.order !== undefined) content.order = args.input.order;
-    if (args.input.autoComplete !== undefined) content.autoComplete = args.input.autoComplete;
-    if (args.input.displayName !== undefined) content.displayName = args.input.displayName;
-    
-    courseTemplate.updatedAt = now;
-    lmsContents.set(content.id, content);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  courseTemplateUpdateLmsContentTypeSeparator: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const content = courseTemplate.lmsContents.find(c => c.id === args.contentId && c.__typename === 'LmsSeparatorType');
-    if (!content) {
-      return {
-        errors: [{ field: 'contentId', message: `LmsSeparatorType with ID ${args.contentId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    if (args.input.title !== undefined) content.title = args.input.title;
-    if (args.input.order !== undefined) content.order = args.input.order;
-    
-    courseTemplate.updatedAt = now;
-    lmsContents.set(content.id, content);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  // CourseTemplate LMS Content - Remove
-  courseTemplateRemoveLmsContentType: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const initialLength = courseTemplate.lmsContents.length;
-    courseTemplate.lmsContents = courseTemplate.lmsContents.filter(c => c.id !== args.contentId);
-    
-    if (courseTemplate.lmsContents.length < initialLength) {
-      const now = generateTimestamp();
-      courseTemplate.updatedAt = now;
-      lmsContents.delete(args.contentId);
-      courseTemplates.set(courseTemplate.id, courseTemplate);
-    }
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  // AchievementType CRUD (standalone)
-  createAchievementType: (parent, args) => {
-    const now = generateTimestamp();
-    const id = generateId('achievement');
-    const achievementType = {
-      id,
-      legacyId: `legacy-${id}`,
-      name: args.input.name,
-      description: args.input.description || null,
-      points: args.input.points || null,
-      badgeUrl: args.input.badgeUrl || null,
-      certificateTypeId: args.input.certificateTypeId || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    achievementTypes.set(id, achievementType);
-    
-    return {
-      errors: [],
-      achievementType,
-    };
-  },
-  
-  updateAchievementType: (parent, args) => {
-    const achievementType = achievementTypes.get(args.input.id);
-    if (!achievementType) {
-      return {
-        errors: [{ field: 'id', message: `AchievementType with ID ${args.input.id} not found` }],
-        achievementType: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    if (args.input.name !== undefined) achievementType.name = args.input.name;
-    if (args.input.description !== undefined) achievementType.description = args.input.description;
-    if (args.input.points !== undefined) achievementType.points = args.input.points;
-    if (args.input.badgeUrl !== undefined) achievementType.badgeUrl = args.input.badgeUrl;
-    if (args.input.certificateTypeId !== undefined) achievementType.certificateTypeId = args.input.certificateTypeId;
-    achievementType.updatedAt = now;
-    
-    achievementTypes.set(achievementType.id, achievementType);
-    
-    return {
-      errors: [],
-      achievementType,
-    };
-  },
-  
-  deleteAchievementType: (parent, args) => {
-    const deleted = achievementTypes.delete(args.id);
-    return deleted;
-  },
-  
-  // CourseTemplate AchievementType management
-  courseTemplateAddAchievementType: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    const achievementId = generateId('course-achievement');
-    const achievementType = {
-      id: achievementId,
-      legacyId: `legacy-${achievementId}`,
-      name: args.input.name,
-      description: args.input.description || null,
-      points: args.input.points || null,
-      badgeUrl: args.input.badgeUrl || null,
-      certificateTypeId: args.input.certificateTypeId || null,
-      createdAt: now,
-      updatedAt: now,
-    };
-    
-    const courseAchievement = {
-      id: generateId('course-achievement-link'),
-      achievementType,
-      autoAward: args.input.autoAward !== undefined ? args.input.autoAward : false,
-    };
-    
-    if (!courseTemplate.achievementTypes) {
-      courseTemplate.achievementTypes = [];
-    }
-    courseTemplate.achievementTypes.push(courseAchievement);
-    courseTemplate.updatedAt = now;
-    achievementTypes.set(achievementId, achievementType);
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  courseTemplateRemoveAchievementType: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const initialLength = courseTemplate.achievementTypes ? courseTemplate.achievementTypes.length : 0;
-    courseTemplate.achievementTypes = (courseTemplate.achievementTypes || []).filter(
-      a => a.id !== args.achievementTypeId
-    );
-    
-    if (courseTemplate.achievementTypes.length < initialLength) {
-      const now = generateTimestamp();
-      courseTemplate.updatedAt = now;
-      courseTemplates.set(courseTemplate.id, courseTemplate);
-    }
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  courseTemplateUpdateAchievementType: (parent, args) => {
-    const courseTemplate = courseTemplates.get(args.courseTemplateId);
-    if (!courseTemplate) {
-      return {
-        errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const courseAchievement = (courseTemplate.achievementTypes || []).find(
-      a => a.id === args.achievementTypeId
-    );
-    if (!courseAchievement) {
-      return {
-        errors: [{ field: 'achievementTypeId', message: `AchievementType with ID ${args.achievementTypeId} not found in course` }],
-        courseTemplate: null,
-      };
-    }
-    
-    const now = generateTimestamp();
-    if (args.input.autoAward !== undefined) courseAchievement.autoAward = args.input.autoAward;
-    if (args.input.points !== undefined && courseAchievement.achievementType) {
-      courseAchievement.achievementType.points = args.input.points;
-    }
-    if (args.input.badgeUrl !== undefined && courseAchievement.achievementType) {
-      courseAchievement.achievementType.badgeUrl = args.input.badgeUrl;
-    }
-    
-    courseTemplate.updatedAt = now;
-    courseTemplates.set(courseTemplate.id, courseTemplate);
-    
-    return {
-      errors: [],
-      courseTemplate,
-    };
-  },
-  
-  // Clear all data (for testing/development)
-  clearAllData: (parent, args) => {
-    const courseTemplateCount = courseTemplates.size;
-    const achievementTypeCount = achievementTypes.size;
-    const lmsContentCount = lmsContents.size;
-    
-    courseTemplates.clear();
-    achievementTypes.clear();
-    lmsContents.clear();
-    
-    return {
-      success: true,
-      message: 'All data cleared successfully',
-      clearedCounts: {
-        courseTemplates: courseTemplateCount,
-        achievementTypes: achievementTypeCount,
-        lmsContents: lmsContentCount,
-      },
-    };
-  },
-};
+    lmsContent: (parent, args) => {
+      // Try each type in the union
+      return store.get('LmsResourceType', args.id) ||
+             store.get('LmsExternalType', args.id) ||
+             store.get('LmsSeparatorType', args.id) ||
+             null;
+    },
+  };
 
-/**
- * Field-level resolvers for custom behavior
- */
-export const fieldResolvers = {
+  /**
+   * Custom resolvers for Mutation operations
+   * 
+   * These mutations store entities using Paper store and return response objects.
+   */
+  const mutationResolvers = {
+    // CourseTemplate CRUD
+    createCourseTemplate: (parent, args) => {
+      const now = generateTimestamp();
+      const id = generateId('template');
+      const courseTemplate = {
+        id,
+        legacyId: `legacy-${id}`,
+        name: args.input.name,
+        description: args.input.description || null,
+        code: args.input.code || null,
+        title: args.input.title || args.input.name,
+        learningMode: args.input.learningMode || 'LMS',
+        lifecycleState: 'ACTIVE',
+        lmsContents: [],
+        achievementTypes: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      store.add('CourseTemplate', courseTemplate);
+      
+      return {
+        errors: [],
+        courseTemplate,
+      };
+    },
+    
+    updateCourseTemplate: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.input.id);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'id', message: `CourseTemplate with ID ${args.input.id} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const updates = {};
+      if (args.input.name !== undefined) updates.name = args.input.name;
+      if (args.input.description !== undefined) updates.description = args.input.description;
+      if (args.input.code !== undefined) updates.code = args.input.code;
+      if (args.input.title !== undefined) updates.title = args.input.title;
+      if (args.input.learningMode !== undefined) updates.learningMode = args.input.learningMode;
+      updates.updatedAt = now;
+      
+      const updated = store.update('CourseTemplate', args.input.id, updates);
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    deleteCourseTemplate: (parent, args) => {
+      const deleted = store.remove('CourseTemplate', args.id);
+      return deleted !== null;
+    },
+  
+    // CourseTemplate LMS Content - Add
+    courseTemplateAddLmsContentTypeResource: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const contentId = generateId('lms-resource');
+      const content = {
+        id: contentId,
+        legacyId: `legacy-${contentId}`,
+        __typename: 'LmsResourceType',
+        title: args.input.title,
+        description: args.input.description || null,
+        resourceUrl: args.input.resourceUrl || null,
+        order: args.input.order || 0,
+        autoComplete: args.input.autoComplete !== undefined ? args.input.autoComplete : false,
+        displayName: args.input.displayName || null,
+        documentId: args.input.documentId || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      store.add('LmsResourceType', content);
+      
+      const updatedLmsContents = [...(courseTemplate.lmsContents || []), content];
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        lmsContents: updatedLmsContents,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    courseTemplateAddLmsContentTypeExternal: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const contentId = generateId('lms-external');
+      const content = {
+        id: contentId,
+        legacyId: `legacy-${contentId}`,
+        __typename: 'LmsExternalType',
+        title: args.input.title,
+        description: args.input.description || null,
+        externalUrl: args.input.externalUrl,
+        order: args.input.order || 0,
+        autoComplete: args.input.autoComplete !== undefined ? args.input.autoComplete : false,
+        displayName: args.input.displayName || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      store.add('LmsExternalType', content);
+      
+      const updatedLmsContents = [...(courseTemplate.lmsContents || []), content];
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        lmsContents: updatedLmsContents,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    courseTemplateAddLmsContentTypeSeparator: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const contentId = generateId('lms-separator');
+      const content = {
+        id: contentId,
+        legacyId: `legacy-${contentId}`,
+        __typename: 'LmsSeparatorType',
+        title: args.input.title,
+        order: args.input.order || 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      store.add('LmsSeparatorType', content);
+      
+      const updatedLmsContents = [...(courseTemplate.lmsContents || []), content];
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        lmsContents: updatedLmsContents,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+  
+    // CourseTemplate LMS Content - Update
+    courseTemplateUpdateLmsContentTypeResource: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const content = store.get('LmsResourceType', args.contentId);
+      if (!content) {
+        return {
+          errors: [{ field: 'contentId', message: `LmsResourceType with ID ${args.contentId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const updates = {};
+      if (args.input.title !== undefined) updates.title = args.input.title;
+      if (args.input.description !== undefined) updates.description = args.input.description;
+      if (args.input.resourceUrl !== undefined) updates.resourceUrl = args.input.resourceUrl;
+      if (args.input.order !== undefined) updates.order = args.input.order;
+      if (args.input.autoComplete !== undefined) updates.autoComplete = args.input.autoComplete;
+      if (args.input.displayName !== undefined) updates.displayName = args.input.displayName;
+      if (args.input.documentId !== undefined) updates.documentId = args.input.documentId;
+      updates.updatedAt = now;
+      
+      store.update('LmsResourceType', args.contentId, updates);
+      
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    courseTemplateUpdateLmsContentTypeExternal: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const content = store.get('LmsExternalType', args.contentId);
+      if (!content) {
+        return {
+          errors: [{ field: 'contentId', message: `LmsExternalType with ID ${args.contentId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const updates = {};
+      if (args.input.title !== undefined) updates.title = args.input.title;
+      if (args.input.description !== undefined) updates.description = args.input.description;
+      if (args.input.externalUrl !== undefined) updates.externalUrl = args.input.externalUrl;
+      if (args.input.order !== undefined) updates.order = args.input.order;
+      if (args.input.autoComplete !== undefined) updates.autoComplete = args.input.autoComplete;
+      if (args.input.displayName !== undefined) updates.displayName = args.input.displayName;
+      updates.updatedAt = now;
+      
+      store.update('LmsExternalType', args.contentId, updates);
+      
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    courseTemplateUpdateLmsContentTypeSeparator: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const content = store.get('LmsSeparatorType', args.contentId);
+      if (!content) {
+        return {
+          errors: [{ field: 'contentId', message: `LmsSeparatorType with ID ${args.contentId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const updates = {};
+      if (args.input.title !== undefined) updates.title = args.input.title;
+      if (args.input.order !== undefined) updates.order = args.input.order;
+      updates.updatedAt = now;
+      
+      store.update('LmsSeparatorType', args.contentId, updates);
+      
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    // CourseTemplate LMS Content - Remove
+    courseTemplateRemoveLmsContentType: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      // Try to find and remove from each content type
+      const resource = store.get('LmsResourceType', args.contentId);
+      const external = store.get('LmsExternalType', args.contentId);
+      const separator = store.get('LmsSeparatorType', args.contentId);
+      
+      if (resource) {
+        store.remove('LmsResourceType', args.contentId);
+      } else if (external) {
+        store.remove('LmsExternalType', args.contentId);
+      } else if (separator) {
+        store.remove('LmsSeparatorType', args.contentId);
+      }
+      
+      const updatedLmsContents = (courseTemplate.lmsContents || []).filter(c => c.id !== args.contentId);
+      const now = generateTimestamp();
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        lmsContents: updatedLmsContents,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+  
+    // AchievementType CRUD (standalone)
+    createAchievementType: (parent, args) => {
+      const now = generateTimestamp();
+      const id = generateId('achievement');
+      const achievementType = {
+        id,
+        legacyId: `legacy-${id}`,
+        name: args.input.name,
+        description: args.input.description || null,
+        points: args.input.points || null,
+        badgeUrl: args.input.badgeUrl || null,
+        certificateTypeId: args.input.certificateTypeId || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      store.add('AchievementType', achievementType);
+      
+      return {
+        errors: [],
+        achievementType,
+      };
+    },
+    
+    updateAchievementType: (parent, args) => {
+      const achievementType = store.get('AchievementType', args.input.id);
+      if (!achievementType) {
+        return {
+          errors: [{ field: 'id', message: `AchievementType with ID ${args.input.id} not found` }],
+          achievementType: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const updates = {};
+      if (args.input.name !== undefined) updates.name = args.input.name;
+      if (args.input.description !== undefined) updates.description = args.input.description;
+      if (args.input.points !== undefined) updates.points = args.input.points;
+      if (args.input.badgeUrl !== undefined) updates.badgeUrl = args.input.badgeUrl;
+      if (args.input.certificateTypeId !== undefined) updates.certificateTypeId = args.input.certificateTypeId;
+      updates.updatedAt = now;
+      
+      const updated = store.update('AchievementType', args.input.id, updates);
+      
+      return {
+        errors: [],
+        achievementType: updated,
+      };
+    },
+    
+    deleteAchievementType: (parent, args) => {
+      const deleted = store.remove('AchievementType', args.id);
+      return deleted !== null;
+    },
+  
+    // CourseTemplate AchievementType management
+    courseTemplateAddAchievementType: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const achievementId = generateId('course-achievement');
+      const achievementType = {
+        id: achievementId,
+        legacyId: `legacy-${achievementId}`,
+        name: args.input.name,
+        description: args.input.description || null,
+        points: args.input.points || null,
+        badgeUrl: args.input.badgeUrl || null,
+        certificateTypeId: args.input.certificateTypeId || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      store.add('AchievementType', achievementType);
+      
+      const courseAchievement = {
+        id: generateId('course-achievement-link'),
+        achievementType,
+        autoAward: args.input.autoAward !== undefined ? args.input.autoAward : false,
+      };
+      
+      const updatedAchievementTypes = [...(courseTemplate.achievementTypes || []), courseAchievement];
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        achievementTypes: updatedAchievementTypes,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    courseTemplateRemoveAchievementType: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const updatedAchievementTypes = (courseTemplate.achievementTypes || []).filter(
+        a => a.id !== args.achievementTypeId
+      );
+      
+      const now = generateTimestamp();
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        achievementTypes: updatedAchievementTypes,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+    
+    courseTemplateUpdateAchievementType: (parent, args) => {
+      const courseTemplate = store.get('CourseTemplate', args.courseTemplateId);
+      if (!courseTemplate) {
+        return {
+          errors: [{ field: 'courseTemplateId', message: `CourseTemplate with ID ${args.courseTemplateId} not found` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const courseAchievement = (courseTemplate.achievementTypes || []).find(
+        a => a.id === args.achievementTypeId
+      );
+      if (!courseAchievement) {
+        return {
+          errors: [{ field: 'achievementTypeId', message: `AchievementType with ID ${args.achievementTypeId} not found in course` }],
+          courseTemplate: null,
+        };
+      }
+      
+      const now = generateTimestamp();
+      const updatedAchievementTypes = (courseTemplate.achievementTypes || []).map(a => {
+        if (a.id === args.achievementTypeId) {
+          const updated = { ...a };
+          if (args.input.autoAward !== undefined) updated.autoAward = args.input.autoAward;
+          if (args.input.points !== undefined && updated.achievementType) {
+            updated.achievementType = { ...updated.achievementType, points: args.input.points };
+            // Also update in store
+            store.update('AchievementType', updated.achievementType.id, { points: args.input.points });
+          }
+          if (args.input.badgeUrl !== undefined && updated.achievementType) {
+            updated.achievementType = { ...updated.achievementType, badgeUrl: args.input.badgeUrl };
+            // Also update in store
+            store.update('AchievementType', updated.achievementType.id, { badgeUrl: args.input.badgeUrl });
+          }
+          return updated;
+        }
+        return a;
+      });
+      
+      const updated = store.update('CourseTemplate', args.courseTemplateId, {
+        achievementTypes: updatedAchievementTypes,
+        updatedAt: now,
+      });
+      
+      return {
+        errors: [],
+        courseTemplate: updated,
+      };
+    },
+  
+    // Clear all data (for testing/development)
+    clearAllData: (parent, args) => {
+      const courseTemplates = store.list('CourseTemplate') || [];
+      const achievementTypes = store.list('AchievementType') || [];
+      const resources = store.list('LmsResourceType') || [];
+      const externals = store.list('LmsExternalType') || [];
+      const separators = store.list('LmsSeparatorType') || [];
+      
+      const courseTemplateCount = courseTemplates.length;
+      const achievementTypeCount = achievementTypes.length;
+      const lmsContentCount = resources.length + externals.length + separators.length;
+      
+      // Clear all entities
+      courseTemplates.forEach(ct => store.remove('CourseTemplate', ct.id));
+      achievementTypes.forEach(at => store.remove('AchievementType', at.id));
+      resources.forEach(r => store.remove('LmsResourceType', r.id));
+      externals.forEach(e => store.remove('LmsExternalType', e.id));
+      separators.forEach(s => store.remove('LmsSeparatorType', s.id));
+      
+      return {
+        success: true,
+        message: 'All data cleared successfully',
+        clearedCounts: {
+          courseTemplates: courseTemplateCount,
+          achievementTypes: achievementTypeCount,
+          lmsContents: lmsContentCount,
+        },
+      };
+    },
+  };
+
+  /**
+   * Field-level resolvers for custom behavior
+   */
+  const fieldResolvers = {
   CourseTemplate: {
     // Return lmsContents as connection
     lmsContents: (parent) => {
@@ -639,9 +708,16 @@ export const fieldResolvers = {
     },
   },
   
-  LmsSeparatorType: {
-    legacyId: (parent) => {
-      return parent.legacyId || `legacy-${parent.id}`;
+    LmsSeparatorType: {
+      legacyId: (parent) => {
+        return parent.legacyId || `legacy-${parent.id}`;
+      },
     },
-  },
-};
+  };
+
+  return {
+    queryResolvers,
+    mutationResolvers,
+    fieldResolvers,
+  };
+}
