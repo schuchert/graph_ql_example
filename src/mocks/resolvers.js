@@ -4,7 +4,7 @@
  */
 
 const paperStore = require('./paper-store');
-const { generateId, generateTimeZonedDateTime, createConnection, createPageInfo } = require('../utils/helpers');
+const { generateId, generateTimeZonedDateTime, createConnection, createPageInfo, generateCursor } = require('../utils/helpers');
 
 /**
  * Query Resolvers

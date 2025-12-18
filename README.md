@@ -1,289 +1,104 @@
-# GraphQL Mock Server Template
+# Administrate GraphQL Mock Server
 
-This is a template for creating a GraphQL mock server that matches your generated GraphQL client code structure.
+A GraphQL mock server for the Administrate API that matches the generated client code structure from Kotlin/Java. This server provides in-memory data storage using a Paper-like store pattern and supports the nested mutation structure used by the Administrate GraphQL API.
+
+## Features
+
+- 🚀 **GraphQL Mock Server** - Full GraphQL API simulation
+- 📊 **GraphiQL Interface** - Built-in GraphQL playground for testing
+- 💾 **In-Memory Storage** - Paper-like store for data persistence
+- 🔄 **Nested Mutations** - Supports the Administrate mutation pattern
+- 🧹 **Data Management** - Utility mutation to clear all data
+- 📦 **Docker Support** - Easy deployment with Docker
 
 ## Project Structure
 
 ```
-.
-├── README.md                 # This file
-├── package.json              # Node.js dependencies
-├── .gitignore                # Git ignore rules
+graph_ql/
 ├── src/
-│   ├── server.js            # Main server entry point
-│   ├── handler.js           # GraphQL handler setup
-│   ├── schema.graphql       # YOUR SCHEMA GOES HERE
+│   ├── schema.graphql          # GraphQL schema definition
+│   ├── handler.js              # Schema loader and resolver setup
+│   ├── server.js               # Express + Apollo Server setup
 │   ├── mocks/
-│   │   ├── resolvers.js     # Mock resolvers (auto-generated structure)
-│   │   └── paper-store.js  # In-memory data store
+│   │   ├── resolvers.js        # GraphQL resolvers
+│   │   └── paper-store.js      # In-memory data store
 │   └── utils/
-│       └── helpers.js       # Utility functions
-└── tests/                    # Example test files (optional)
-    └── example.test.js
+│       └── helpers.js          # Utility functions
+├── scripts/                    # Example query and mutation scripts
+│   ├── query-course-templates.sh
+│   ├── mutation-create-course-template.sh
+│   ├── mutation-update-course-template.sh
+│   └── mutation-clear-all-data.sh
+├── package.json
+└── README.md
 ```
 
-## Setup Instructions
+## Installation
 
-### 1. Install Dependencies
+### Prerequisites
+
+- Node.js 16+ 
+- npm or yarn
+
+### Setup
 
 ```bash
 npm install
 ```
 
-### 2. Add Your Schema
+## Running the Server
 
-The schema file `src/schema.graphql` has been populated with your Administrate GraphQL schema.
-
-### 3. Add Your Generated Client Code
-
-Your generated client code is located at:
-- `/Users/brettschuchert/Downloads/graphql/main/com/fsi/tm2poc`
-
-The mock server has been configured to match the structure found in your client code.
-
-### 4. Update Resolvers
-
-The `src/mocks/resolvers.js` file contains a template structure that matches your client code:
-
-1. **Mutation Structure**: The nested structure matches your client:
-   - `mutation { courseTemplate { create(...) } }`
-   - `mutation { courseTemplate { update(...) } }`
-   - Resolver structure: `courseTemplate: () => ({ create: ..., update: ... })`
-
-2. **Response Types**: Mock responses match your generated response types:
-   - `CourseTemplateCreateResponse` with `courseTemplate` and `errors` fields
-   - `CourseTemplateUpdateResponse` with `courseTemplate` and `errors` fields
-   - Error structure: `{ label, message, value }`
-
-3. **Field Mappings**: Schema fields are mapped to your generated types
-
-### 5. Start the Server
+### Local Development
 
 ```bash
 npm start
 ```
 
-The server will run on `http://localhost:4000/graphql`
+Or with auto-reload:
 
-## Key Files to Customize
-
-### `src/schema.graphql`
-Your complete GraphQL schema. The mock server uses this to validate requests.
-
-### `src/mocks/resolvers.js`
-Contains the mock resolver functions. Key sections:
-- `queryResolvers`: Query operations (e.g., `courseTemplates`, `courseTemplate`)
-- `mutationResolvers`: Mutation operations with nested structure
-  - `courseTemplate.create`: Creates a new course template
-  - `courseTemplate.update`: Updates an existing course template
-  - `clearAllData`: **Mock-only utility** to clear all in-memory data without restarting
-- `fieldResolvers`: Field-level customizations
-
-### `src/mocks/paper-store.js`
-In-memory data store for persistence. **Data persists across requests until the server is restarted.** Currently supports:
-- `createCourseTemplate(input)`: Create a new course template
-- `updateCourseTemplate(id, input)`: Update an existing course template
-- `getCourseTemplateById(id)`: Get a course template by ID
-- `getAllCourseTemplates()`: Get all course templates
-- `clear()`: Clear all data (used by the `clearAllData` mutation)
-
-### `src/utils/helpers.js`
-Utility functions for generating IDs, timestamps, pagination cursors, etc.
-
-## Understanding Generated Client Structure
-
-Based on your generated client code, the structure is:
-
-1. **Mutation Structure**:
-   ```kotlin
-   // CreateCourseTemplate.kt
-   mutation CreateCourseTemplate($input: CourseTemplateCreateInput!) {
-       courseTemplate {
-           create(input: $input) { ... }
-       }
-   }
-   ```
-   Resolver: `courseTemplate: () => ({ create: ... })`
-
-2. **Response Structure**:
-   ```kotlin
-   // CourseTemplateCreateResponse.kt
-   data class CourseTemplateCreateResponse(
-       val courseTemplate: CourseTemplate?,
-       val errors: List<FieldError>
-   )
-   ```
-   Mock response includes both `courseTemplate` and `errors` fields.
-
-3. **Error Structure**:
-   ```kotlin
-   // FieldError.kt
-   data class FieldError(
-       val label: String?,
-       val message: String,
-       val value: String?
-   )
-   ```
-   Errors are returned in this exact format.
-
-4. **Query Structure**:
-   ```kotlin
-   // CourseTemplatesQuery.kt
-   query CourseTemplatesQuery {
-       courseTemplates {
-           edges {
-               node { ... }
-           }
-           pageInfo { ... }
-       }
-   }
-   ```
-   Uses connection-based pagination with `edges`, `node`, and `pageInfo`.
-
-## Data Persistence
-
-**All mutations persist in memory until the server is restarted.** The `paper-store.js` uses a singleton pattern, so:
-- ✅ Created entities persist across requests
-- ✅ Updated entities persist across requests
-- ✅ Data is shared across all requests to the server
-- ⚠️ Data is lost when the server restarts (in-memory only)
-
-To clear all data without restarting the server, use the `clearAllData` mutation (see below).
-
-## Testing
-
-You can test the mock server using:
-
-1. **GraphiQL Interface**: Visit `http://localhost:4000/graphql` in your browser
-
-2. **cURL**:
-   ```bash
-   # Create a course template
-   curl -X POST http://localhost:4000/graphql \
-     -H "Content-Type: application/json" \
-     -d '{
-       "query": "mutation CreateCourseTemplate($input: CourseTemplateCreateInput!) { courseTemplate { create(input: $input) { courseTemplate { id code title lifecycleState } errors { label message value } } } }",
-       "variables": {
-         "input": {
-           "code": "TEST-001",
-           "title": "Test Course"
-         }
-       }
-     }'
-   
-   # Query course templates
-   curl -X POST http://localhost:4000/graphql \
-     -H "Content-Type: application/json" \
-     -d '{
-       "query": "{ courseTemplates { edges { node { id code title lifecycleState } } pageInfo { hasNextPage hasPreviousPage } } }"
-     }'
-   ```
-
-3. **Your Generated Client**: Use your generated Kotlin client code to make requests
-
-## Utility Mutations
-
-### Clear All Data (Mock-Only)
-
-This is a **mock-only utility mutation** that clears all in-memory data without restarting the server:
-
-```graphql
-mutation ClearAllData {
-  clearAllData {
-    success
-    message
-    itemsCleared
-  }
-}
-```
-
-**Response:**
-```json
-{
-  "data": {
-    "clearAllData": {
-      "success": true,
-      "message": "Cleared 5 items from in-memory storage",
-      "itemsCleared": 5
-    }
-  }
-}
-```
-
-**cURL Example:**
 ```bash
-curl -X POST http://localhost:4000/graphql \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "mutation { clearAllData { success message itemsCleared } }"
-  }'
+npm run dev
 ```
 
-## Example Mutations
+The server will start on `http://localhost:4000` (or the port specified in `PORT` environment variable).
 
-### Create Course Template
+### Docker
+
+```bash
+# Build the image
+npm run docker:build
+
+# Run the container
+npm run docker:run
+
+# Or use docker-compose
+npm run docker:compose:up
+```
+
+## Endpoints
+
+- **GraphQL API**: `POST http://localhost:4000/graphql`
+- **GraphiQL Interface**: `GET http://localhost:4000/graphql`
+- **Health Check**: The server responds to GraphQL queries on `/graphql`
+
+## GraphQL Queries and Mutations
+
+### Query: Get Course Templates
+
+Query all course templates with pagination support.
+
+**GraphQL Query:**
 ```graphql
-mutation CreateCourseTemplate($input: CourseTemplateCreateInput!) {
-  courseTemplate {
-    create(input: $input) {
-      courseTemplate {
-        id
-        code
-        title
-        lifecycleState
-      }
-      errors {
-        label
-        message
-        value
-      }
-    }
-  }
-}
-```
-
-Variables:
-```json
-{
-  "input": {
-    "code": "TEST-001",
-    "title": "Test Course Template",
-    "lifecycleState": "draft"
-  }
-}
-```
-
-### Update Course Template
-```graphql
-mutation UpdateCourseTemplate($courseTemplateId: ID!, $input: CourseTemplateUpdateInput!) {
-  courseTemplate {
-    update(courseTemplateId: $courseTemplateId, input: $input) {
-      courseTemplate {
-        id
-        code
-        title
-        lifecycleState
-      }
-      errors {
-        label
-        message
-        value
-      }
-    }
-  }
-}
-```
-
-### Query Course Templates
-```graphql
-query CourseTemplatesQuery {
-  courseTemplates {
+query {
+  courseTemplates(first: 10) {
     edges {
+      cursor
       node {
         id
         code
         title
         lifecycleState
+        createdAt
         updatedAt
       }
     }
@@ -297,121 +112,303 @@ query CourseTemplatesQuery {
 }
 ```
 
-## Tips
-
-1. **Start Simple**: Begin with one mutation type, get it working, then add others
-2. **Match Exactly**: The response structure must match your generated types exactly
-3. **Use Paper Store**: The included Paper store provides in-memory persistence
-4. **Check Logs**: The server logs all requests for debugging
-5. **Extend Resolvers**: Add more resolvers as you need to support additional mutations and queries
-
-## Docker
-
-### Building the Docker Image
-
-Build the Docker image:
-
-```bash
-npm run docker:build
+**Example Response:**
+```json
+{
+  "data": {
+    "courseTemplates": {
+      "edges": [
+        {
+          "cursor": "Y3Vyc29yXzA=",
+          "node": {
+            "id": "ct_1_1234567890",
+            "code": "INTRO-101",
+            "title": "Introduction to GraphQL",
+            "lifecycleState": "draft",
+            "createdAt": "2024-01-15T10:30:00.000Z",
+            "updatedAt": "2024-01-15T10:30:00.000Z"
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "startCursor": "Y3Vyc29yXzA=",
+        "endCursor": "Y3Vyc29yXzA="
+      }
+    }
+  }
+}
 ```
 
-Or use the script:
-
+**Script:**
 ```bash
-./scripts/docker-build-push.sh
+./scripts/query-course-templates.sh
 ```
 
-### Pushing to Docker Hub
+### Mutation: Create Course Template
 
-**Prerequisites:** You must be logged in to Docker Hub:
-```bash
-docker login
+Create a new course template using the nested mutation pattern.
+
+**GraphQL Mutation:**
+```graphql
+mutation {
+  courseTemplate {
+    create(input: {
+      code: "ADV-201"
+      title: "Advanced GraphQL Patterns"
+      lifecycleState: "draft"
+    }) {
+      courseTemplate {
+        id
+        code
+        title
+        lifecycleState
+        createdAt
+        updatedAt
+      }
+      errors {
+        label
+        message
+        value
+      }
+    }
+  }
+}
 ```
 
-Push the image:
-
-```bash
-npm run docker:push
+**Example Response:**
+```json
+{
+  "data": {
+    "courseTemplate": {
+      "create": {
+        "courseTemplate": {
+          "id": "ct_2_1234567891",
+          "code": "ADV-201",
+          "title": "Advanced GraphQL Patterns",
+          "lifecycleState": "draft",
+          "createdAt": "2024-01-15T10:35:00.000Z",
+          "updatedAt": "2024-01-15T10:35:00.000Z"
+        },
+        "errors": []
+      }
+    }
+  }
+}
 ```
 
-Or build and push in one command:
-
+**Script:**
 ```bash
-npm run docker:build:push
+./scripts/mutation-create-course-template.sh "ADV-201" "Advanced GraphQL Patterns" "draft"
 ```
 
-Or use the interactive script:
+### Mutation: Update Course Template
 
-```bash
-./scripts/docker-build-push.sh
+Update an existing course template.
+
+**GraphQL Mutation:**
+```graphql
+mutation {
+  courseTemplate {
+    update(
+      courseTemplateId: "ct_2_1234567891"
+      input: {
+        title: "Advanced GraphQL Patterns and Best Practices"
+        lifecycleState: "active"
+      }
+    ) {
+      courseTemplate {
+        id
+        code
+        title
+        lifecycleState
+        updatedAt
+      }
+      errors {
+        label
+        message
+        value
+      }
+    }
+  }
+}
 ```
 
-The image will be published as: `schuchert/administrate:latest`
-
-### Running the Docker Container
-
-**Option 1: Using docker-compose (recommended)**
-
-```bash
-npm run docker:compose:up
+**Example Response:**
+```json
+{
+  "data": {
+    "courseTemplate": {
+      "update": {
+        "courseTemplate": {
+          "id": "ct_2_1234567891",
+          "code": "ADV-201",
+          "title": "Advanced GraphQL Patterns and Best Practices",
+          "lifecycleState": "active",
+          "updatedAt": "2024-01-15T10:40:00.000Z"
+        },
+        "errors": []
+      }
+    }
+  }
+}
 ```
 
-Or manually:
-
+**Script:**
 ```bash
-docker-compose up -d
+./scripts/mutation-update-course-template.sh "ct_2_1234567891" "Advanced GraphQL Patterns and Best Practices" "active"
 ```
 
-View logs:
+### Mutation: Clear All Data
 
-```bash
-npm run docker:compose:logs
+Clear all in-memory data. Useful for testing and resetting the server state without restarting.
+
+**GraphQL Mutation:**
+```graphql
+mutation {
+  clearAllData {
+    success
+    message
+    itemsCleared
+  }
+}
 ```
 
-Stop the container:
-
-```bash
-npm run docker:compose:down
+**Example Response:**
+```json
+{
+  "data": {
+    "clearAllData": {
+      "success": true,
+      "message": "Cleared 5 items from in-memory storage",
+      "itemsCleared": 5
+    }
+  }
+}
 ```
 
-**Option 2: Using docker run**
-
+**Script:**
 ```bash
-npm run docker:run
+./scripts/mutation-clear-all-data.sh
 ```
 
-Or manually:
+## Error Handling
 
-```bash
-docker run -p 4000:4000 schuchert/administrate:latest
+All mutations return an `errors` array. If validation fails or an error occurs, the mutation will return errors with details:
+
+```graphql
+{
+  "data": {
+    "courseTemplate": {
+      "create": {
+        "courseTemplate": null,
+        "errors": [
+          {
+            "label": "code",
+            "message": "Code is required",
+            "value": null
+          },
+          {
+            "label": "title",
+            "message": "Title is required",
+            "value": null
+          }
+        ]
+      }
+    }
+  }
+}
 ```
 
-The GraphQL server will be available at `http://localhost:4000/graphql`
+## Using the Scripts
 
-### Docker Commands Summary
+All scripts are located in the `scripts/` directory and can be executed directly:
 
-- `npm run docker:build` - Build the Docker image
-- `npm run docker:push` - Push to Docker Hub
-- `npm run docker:build:push` - Build and push in one command
-- `npm run docker:run` - Run the container locally (docker run)
-- `npm run docker:compose:up` - Start container with docker-compose
-- `npm run docker:compose:down` - Stop container with docker-compose
-- `npm run docker:compose:logs` - View container logs
-- `./scripts/docker-build-push.sh [version]` - Interactive build and push script
+```bash
+# Make scripts executable (if needed)
+chmod +x scripts/*.sh
 
-## Next Steps
+# Query course templates
+./scripts/query-course-templates.sh
 
-1. ✅ Schema file is in place (`src/schema.graphql`)
-2. ✅ Resolvers match your client code structure
-3. ✅ Test with your generated client
-4. **Extend as needed**: Add more mutations/queries as required
-5. **Customize data**: Modify `paper-store.js` to add seed data or custom logic
-6. **Deploy**: Build and push Docker image to Docker Hub
+# Create a course template
+./scripts/mutation-create-course-template.sh "CODE-123" "Course Title" "draft"
+
+# Update a course template
+./scripts/mutation-update-course-template.sh "ct_1_1234567890" "New Title" "active"
+
+# Clear all data
+./scripts/mutation-clear-all-data.sh
+```
+
+### Script Environment Variables
+
+All scripts support the `GRAPHQL_URL` environment variable to specify a different server URL:
+
+```bash
+GRAPHQL_URL=http://localhost:5000/graphql ./scripts/query-course-templates.sh
+```
+
+## Data Storage
+
+The server uses an in-memory Paper-like store (`src/mocks/paper-store.js`) that:
+
+- Persists data across requests during server runtime
+- Automatically generates unique IDs for new entities
+- Supports CRUD operations for course templates
+- Can be cleared using the `clearAllData` mutation
+
+**Note:** Data is lost when the server restarts. This is intentional for a mock server.
+
+## Development
+
+### Project Structure
+
+- **`src/handler.js`**: Loads the GraphQL schema and creates executable schema with resolvers
+- **`src/mocks/resolvers.js`**: Contains all GraphQL resolvers (queries, mutations, field resolvers)
+- **`src/mocks/paper-store.js`**: In-memory data store singleton
+- **`src/utils/helpers.js`**: Utility functions for ID generation, timestamps, pagination, etc.
+
+### Adding New Resolvers
+
+1. Add the resolver function to `src/mocks/resolvers.js`
+2. Add the corresponding schema definition to `src/schema.graphql` (if not already present)
+3. The resolver will be automatically picked up by the schema builder
+
+### Adding New Store Methods
+
+1. Add methods to the `PaperStore` class in `src/mocks/paper-store.js`
+2. Use the singleton instance exported by the module
+3. Access via `require('./mocks/paper-store')` in resolvers
+
+## Testing
+
+You can test the API using:
+
+1. **GraphiQL Interface**: Visit `http://localhost:4000/graphql` in your browser
+2. **cURL**: Use the provided scripts or create your own
+3. **Postman/Insomnia**: Import the GraphQL endpoint
+4. **Your Client Code**: Point your generated Kotlin/Java client to the mock server
 
 ## Troubleshooting
 
-- **Schema errors**: Make sure `src/schema.graphql` is valid GraphQL
-- **Resolver errors**: Check that resolver structure matches your client code
-- **Type mismatches**: Ensure response types match your generated Kotlin types exactly
-- **Port conflicts**: Change `PORT` in `src/server.js` if 4000 is in use
+### Server won't start
 
+- Check that port 4000 is not already in use
+- Verify all dependencies are installed: `npm install`
+- Check Node.js version: `node --version` (should be 16+)
+
+### Queries return empty results
+
+- Use the `clearAllData` mutation to reset, then create new data
+- Check that mutations are succeeding (no errors in response)
+
+### Schema errors
+
+- Ensure `src/schema.graphql` is valid GraphQL
+- Check that resolver return types match schema definitions
+
+## License
+
+ISC
