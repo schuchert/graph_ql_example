@@ -1,26 +1,37 @@
 {
-  "name": "graphql-mock-server",
+  "name": "administrate-graphql-mock-server",
   "version": "1.0.0",
-  "description": "GraphQL mock server for integration testing using graphql-mocks",
+  "description": "GraphQL mock server for Administrate API matching generated client code",
   "main": "src/server.js",
-  "type": "module",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "dev": "nodemon src/server.js",
+    "docker:build": "docker build -t schuchert/administrate:latest .",
+    "docker:push": "docker push schuchert/administrate:latest",
+    "docker:build:push": "npm run docker:build && npm run docker:push",
+    "docker:tag": "docker tag schuchert/administrate:latest schuchert/administrate",
+    "docker:run": "docker run -p 4000:4000 schuchert/administrate:latest",
+    "docker:compose:up": "docker-compose up -d",
+    "docker:compose:down": "docker-compose down",
+    "docker:compose:logs": "docker-compose logs -f"
   },
   "keywords": [
     "graphql",
-    "mocks",
-    "testing"
+    "mock",
+    "server"
   ],
   "author": "",
-  "license": "MIT",
+  "license": "ISC",
   "dependencies": {
-    "graphql-mocks": "^0.6.0",
-    "graphql": "^15.8.0"
+    "@graphql-tools/schema": "^10.0.0",
+    "@graphql-tools/mock": "^9.0.0",
+    "apollo-server-express": "^3.12.1",
+    "express": "^4.18.2",
+    "graphql": "^16.8.1",
+    "graphql-tag": "^2.12.6"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0"
+    "nodemon": "^3.0.1"
   }
 }
 

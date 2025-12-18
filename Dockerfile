@@ -1,40 +1,28 @@
-# Multi-stage build for Administrate DX GraphQL Mock Server
+# Use Node.js LTS version
+FROM node:18-alpine
 
-# Stage 1: Build dependencies
-FROM node:20-alpine AS builder
-
+# Set working directory
 WORKDIR /app
 
 # Copy package files
-COPY package.json package-lock.json* ./
-COPY ./node_modules ./node_modules
+COPY package*.json ./
 
-# Stage 2: Production image
-FROM node:20-alpine
-
-WORKDIR /app
-
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
-# Copy dependencies from builder
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Install dependencies
+RUN npm ci --only=production
 
 # Copy application files
-COPY --chown=nodejs:nodejs package.json ./
-COPY --chown=nodejs:nodejs src/ ./src/
+COPY src/ ./src/
 
-# Switch to non-root user
-USER nodejs
-
-# Expose the port
+# Expose the GraphQL server port
 EXPOSE 4000
+
+# Set environment variable for port
+ENV PORT=4000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node src/healthcheck.js
+  CMD node -e "require('http').get('http://localhost:4000/graphql?query={__typename}', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the server
-CMD ["npm", "start"]
+CMD ["node", "src/server.js"]
 

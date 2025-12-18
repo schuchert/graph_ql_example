@@ -1,41 +1,55 @@
-import graphqlMocks from 'graphql-mocks';
-import { schema } from './schema.js';
-import { createResolvers } from './mocks/resolvers.js';
-import { PaperStore } from './mocks/paper-store.js';
+/**
+ * GraphQL handler setup
+ * Configures the GraphQL schema with mock resolvers
+ */
 
-const { GraphQLHandler } = graphqlMocks;
+const { makeExecutableSchema } = require('@graphql-tools/schema');
+const fs = require('fs');
+const path = require('path');
+const resolvers = require('./mocks/resolvers');
 
 /**
- * Creates and configures the GraphQL handler with mocks
- * 
- * Uses Paper-like store for in-memory data storage.
- * The handler automatically mocks all fields not explicitly defined
- * in the resolverMap, making it easy to get started with realistic data.
+ * Load the GraphQL schema from file
  */
-export function createHandler() {
-  // Create Paper-like store instance for in-memory data storage
-  const paper = { store: new PaperStore() };
+function loadSchema() {
+  const schemaPath = path.join(__dirname, 'schema.graphql');
+  const schemaString = fs.readFileSync(schemaPath, 'utf8');
+  return schemaString;
+}
 
-  // Create resolvers with paper instance
-  const { queryResolvers, mutationResolvers, fieldResolvers } = createResolvers(paper);
-
-  // Combine all resolvers
-  const resolverMap = {
-    Query: queryResolvers,
-    Mutation: mutationResolvers,
-    ...fieldResolvers,
-  };
-
-  // Create the handler
-  // graphql-mocks will automatically mock any fields not in resolverMap
-  const handler = new GraphQLHandler({
-    resolverMap,
-    dependencies: {
-      graphqlSchema: schema,
-      paper,
-    },
+/**
+ * Create executable schema with resolvers
+ */
+function createSchema() {
+  let typeDefs = loadSchema();
+  
+  // Add mock-only utility types and mutations
+  const mockExtensions = `
+    # Mock-only utility mutation for clearing in-memory data
+    type ClearAllDataResponse {
+      success: Boolean!
+      message: String!
+      itemsCleared: Int!
+    }
+    
+    extend type Mutation {
+      clearAllData: ClearAllDataResponse!
+    }
+  `;
+  
+  typeDefs = [typeDefs, mockExtensions];
+  
+  // Create executable schema
+  const schema = makeExecutableSchema({
+    typeDefs,
+    resolvers,
   });
 
-  return handler;
+  return schema;
 }
+
+module.exports = {
+  createSchema,
+  loadSchema,
+};
 

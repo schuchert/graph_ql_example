@@ -1,92 +1,105 @@
 /**
- * Paper-like store wrapper for in-memory data storage
- * Provides a Paper-compatible API using Maps internally
+ * In-memory data store using a simple object-based approach
+ * Similar to Paper.js store pattern for persistence
  */
 
-export class PaperStore {
+class PaperStore {
   constructor() {
-    this.stores = new Map(); // typeName -> Map<id, entity>
+    this.store = {
+      courseTemplates: [],
+    };
+    this.idCounter = 1;
   }
 
   /**
-   * Add an entity to the store
+   * Generate a new ID
    */
-  add(typeName, entity) {
-    if (!this.stores.has(typeName)) {
-      this.stores.set(typeName, new Map());
-    }
-    const typeStore = this.stores.get(typeName);
-    typeStore.set(entity.id, entity);
-    return entity;
+  generateId() {
+    return `ct_${this.idCounter++}_${Date.now()}`;
   }
 
   /**
-   * Get an entity from the store
+   * Get all course templates
    */
-  get(typeName, id) {
-    const typeStore = this.stores.get(typeName);
-    if (!typeStore) {
-      return null;
-    }
-    return typeStore.get(id) || null;
+  getAllCourseTemplates() {
+    return this.store.courseTemplates;
   }
 
   /**
-   * Update an entity in the store
+   * Get a course template by ID
    */
-  update(typeName, id, updates) {
-    const typeStore = this.stores.get(typeName);
-    if (!typeStore) {
+  getCourseTemplateById(id) {
+    return this.store.courseTemplates.find(ct => ct.id === id);
+  }
+
+  /**
+   * Create a new course template
+   */
+  createCourseTemplate(input) {
+    const courseTemplate = {
+      id: this.generateId(),
+      code: input.code,
+      title: input.title,
+      lifecycleState: input.lifecycleState || 'draft',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...input, // Include any other fields from input
+    };
+    this.store.courseTemplates.push(courseTemplate);
+    return courseTemplate;
+  }
+
+  /**
+   * Update a course template
+   */
+  updateCourseTemplate(id, input) {
+    const index = this.store.courseTemplates.findIndex(ct => ct.id === id);
+    if (index === -1) {
       return null;
     }
-    const entity = typeStore.get(id);
-    if (!entity) {
-      return null;
-    }
-    const updated = { ...entity, ...updates };
-    typeStore.set(id, updated);
+    const existing = this.store.courseTemplates[index];
+    const updated = {
+      ...existing,
+      ...input,
+      id: existing.id, // Preserve ID
+      updatedAt: new Date().toISOString(),
+    };
+    this.store.courseTemplates[index] = updated;
     return updated;
   }
 
   /**
-   * Remove an entity from the store
+   * Delete a course template (or mark as archived)
    */
-  remove(typeName, id) {
-    const typeStore = this.stores.get(typeName);
-    if (!typeStore) {
-      return null;
+  deleteCourseTemplate(id) {
+    const index = this.store.courseTemplates.findIndex(ct => ct.id === id);
+    if (index === -1) {
+      return false;
     }
-    const entity = typeStore.get(id);
-    if (entity) {
-      typeStore.delete(id);
-      return entity;
-    }
-    return null;
+    this.store.courseTemplates.splice(index, 1);
+    return true;
   }
 
   /**
-   * List all entities of a type
-   */
-  list(typeName) {
-    const typeStore = this.stores.get(typeName);
-    if (!typeStore) {
-      return [];
-    }
-    return Array.from(typeStore.values());
-  }
-
-  /**
-   * Clear all entities
+   * Clear all data (useful for testing)
    */
   clear() {
-    this.stores.clear();
+    this.store = {
+      courseTemplates: [],
+    };
+    this.idCounter = 1;
   }
 
   /**
-   * Clear all entities of a specific type
+   * Get store size (for debugging)
    */
-  clearType(typeName) {
-    this.stores.delete(typeName);
+  getSize() {
+    return {
+      courseTemplates: this.store.courseTemplates.length,
+    };
   }
 }
+
+// Export singleton instance
+module.exports = new PaperStore();
 

@@ -1,8 +1,0 @@
-graphql:
-  client:
-    url: http://localhost:4000/graphql
-
-logging:
-  level:
-    com.fsi.tm2poc.graphql: DEBUG
-    com.graphql_java_generator: DEBUG
