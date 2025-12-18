@@ -4,6 +4,7 @@ import com.administrate.graphql.model.AchievementType;
 import com.administrate.graphql.model.AchievementTypeConnection;
 import com.administrate.graphql.model.CreateAchievementTypeResponse;
 import com.administrate.graphql.model.UpdateAchievementTypeResponse;
+import com.administrate.graphql.model.CourseTemplateConnection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,31 +20,104 @@ import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = {GraphQLApplication.class, AchievementTypeTest.TestConfig.class})
+@SpringBootTest(
+        classes = {GraphQLApplication.class, AchievementTypeTest.TestConfig.class},
+        properties = {
+                "spring.autoconfigure.exclude=com.fsi.tm2poc.graphql.client_spring_autoconfiguration.GraphQLPluginAutoConfiguration"
+        }
+)
 @TestPropertySource(properties = {
-        "graphql.server.url=http://localhost:4000"
+        "graphql.server.url=http://localhost:4000",
+        "spring.autoconfigure.exclude=com.fsi.tm2poc.graphql.client_spring_autoconfiguration.GraphQLPluginAutoConfiguration"
 })
 @DisplayName("Achievement Type Tests")
 class AchievementTypeTest {
 
-    @Configuration
-    static class TestConfig {
-        @Bean
-        public WebClient webClient() {
-            return WebClient.builder()
-                    .baseUrl("http://localhost:4000/graphql")
-                    .build();
-        }
-
-        @Bean
-        public HttpGraphQlClient graphQlClient(WebClient webClient) {
-            return HttpGraphQlClient.builder(webClient)
-                    .build();
-        }
-    }
-
     @Autowired
     private HttpGraphQlClient graphQlClient;
+
+    /**
+     * Helper method to clear all achievement types and course templates from the test database.
+     * This can be called in @BeforeEach or @AfterEach to ensure clean test state.
+     */
+    private void clearAllData() {
+        try {
+            // Clear all achievement types
+            String queryAchievementTypes = """
+                    query {
+                      achievementTypes {
+                        edges {
+                          node {
+                            id
+                          }
+                        }
+                      }
+                    }
+                    """;
+            
+            AchievementTypeConnection achievementTypes = graphQlClient
+                    .document(queryAchievementTypes)
+                    .retrieve("achievementTypes")
+                    .toEntity(AchievementTypeConnection.class)
+                    .block();
+            
+            if (achievementTypes != null && achievementTypes.getEdges() != null) {
+                for (AchievementTypeConnection.AchievementTypeEdge edge : achievementTypes.getEdges()) {
+                    if (edge.getNode() != null && edge.getNode().getId() != null) {
+                        // Note: Delete mutation would go here if available in schema
+                        // For now, we just query to clear - actual deletion depends on schema support
+                    }
+                }
+            }
+
+            // Clear all course templates
+            String queryCourseTemplates = """
+                    query {
+                      courseTemplates {
+                        edges {
+                          node {
+                            id
+                          }
+                        }
+                      }
+                    }
+                    """;
+            
+            CourseTemplateConnection courseTemplates = graphQlClient
+                    .document(queryCourseTemplates)
+                    .retrieve("courseTemplates")
+                    .toEntity(CourseTemplateConnection.class)
+                    .block();
+            
+            if (courseTemplates != null && courseTemplates.getEdges() != null) {
+                for (CourseTemplateConnection.CourseTemplateEdge edge : courseTemplates.getEdges()) {
+                    if (edge.getNode() != null && edge.getNode().getId() != null) {
+                        String deleteMutation = String.format("""
+                                mutation {
+                                  courseTemplate {
+                                    delete(courseTemplateId: "%s") {
+                                      errors {
+                                        field
+                                        message
+                                      }
+                                    }
+                                  }
+                                }
+                                """, edge.getNode().getId());
+                        
+                        graphQlClient
+                                .document(deleteMutation)
+                                .retrieve("courseTemplate.delete")
+                                .toEntity(Object.class)
+                                .block();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Log but don't fail tests if cleanup fails
+            System.err.println("Warning: Failed to clear all data: " + e.getMessage());
+        }
+    }
 
     @Test
     @DisplayName("Should create an achievement type and verify it exists")
@@ -51,26 +125,25 @@ class AchievementTypeTest {
         // Given - Create an achievement type
         String mutation = """
                 mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Course Completion"
-                      description: "Awarded for completing the course"
-                      points: 100
-                      badgeUrl: "https://example.com/badge.png"
-                    }
-                  ) {
-                    errors {
-                      field
-                      message
-                    }
-                    achievementType {
-                      id
-                      name
-                      description
-                      points
-                      badgeUrl
-                      createdAt
-                      updatedAt
+                  achievementType {
+                    create(
+                      input: {
+                        name: "Course Completion"
+                        description: "Awarded for completing the course"
+                      }
+                    ) {
+                      errors {
+                        field
+                        message
+                      }
+                      achievementType {
+                        id
+                        name
+                        description
+                        lifecycleState
+                        createdAt
+                        updatedAt
+                      }
                     }
                   }
                 }
@@ -79,50 +152,52 @@ class AchievementTypeTest {
         // When - Execute the mutation
         CreateAchievementTypeResponse createResponse = graphQlClient
                 .document(mutation)
-                .retrieve("createAchievementType")
+                .retrieve("achievementType.create")
                 .toEntity(CreateAchievementTypeResponse.class)
                 .block();
 
         // Then - Verify creation was successful
         assertThat(createResponse).isNotNull();
         assertThat(createResponse.getErrors()).isEmpty();
-        
+
         AchievementType createdAchievement = createResponse.getAchievementType();
         assertThat(createdAchievement).isNotNull();
         assertThat(createdAchievement.getId()).isNotBlank();
         assertThat(createdAchievement.getName()).isEqualTo("Course Completion");
         assertThat(createdAchievement.getDescription()).isEqualTo("Awarded for completing the course");
-        assertThat(createdAchievement.getPoints()).isEqualTo(100);
-        assertThat(createdAchievement.getBadgeUrl()).isEqualTo("https://example.com/badge.png");
 
         // Verify the achievement type exists by querying it
         String achievementTypeId = createdAchievement.getId();
         String query = String.format("""
                 query {
-                  achievementType(id: "%s") {
-                    id
-                    name
-                    description
-                    points
-                    badgeUrl
+                  achievementTypes(filters: [{field: id, operation: EQUALS, value: "%s"}]) {
+                    edges {
+                      node {
+                        id
+                        name
+                        description
+                        lifecycleState
+                      }
+                    }
                   }
                 }
                 """, achievementTypeId);
 
         // When - Query the created achievement type
-        AchievementType queriedAchievement = graphQlClient
+        AchievementTypeConnection connection = graphQlClient
                 .document(query)
-                .retrieve("achievementType")
-                .toEntity(AchievementType.class)
+                .retrieve("achievementTypes")
+                .toEntity(AchievementTypeConnection.class)
                 .block();
 
         // Then - Verify the achievement type exists and matches
+        assertThat(connection).isNotNull();
+        assertThat(connection.getEdges()).isNotEmpty();
+        AchievementType queriedAchievement = connection.getEdges().get(0).getNode();
         assertThat(queriedAchievement).isNotNull();
         assertThat(queriedAchievement.getId()).isEqualTo(achievementTypeId);
         assertThat(queriedAchievement.getName()).isEqualTo("Course Completion");
         assertThat(queriedAchievement.getDescription()).isEqualTo("Awarded for completing the course");
-        assertThat(queriedAchievement.getPoints()).isEqualTo(100);
-        assertThat(queriedAchievement.getBadgeUrl()).isEqualTo("https://example.com/badge.png");
     }
 
     @Test
@@ -131,24 +206,23 @@ class AchievementTypeTest {
         // Given - Create an achievement type first
         String createMutation = """
                 mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Original Achievement"
-                      description: "Original description"
-                      points: 50
-                      badgeUrl: "https://example.com/original.png"
-                    }
-                  ) {
-                    errors {
-                      field
-                      message
-                    }
-                    achievementType {
-                      id
-                      name
-                      description
-                      points
-                      badgeUrl
+                  achievementType {
+                    create(
+                      input: {
+                        name: "Original Achievement"
+                        description: "Original description"
+                      }
+                    ) {
+                      errors {
+                        field
+                        message
+                      }
+                      achievementType {
+                        id
+                        name
+                        description
+                        lifecycleState
+                      }
                     }
                   }
                 }
@@ -156,7 +230,7 @@ class AchievementTypeTest {
 
         CreateAchievementTypeResponse createResponse = graphQlClient
                 .document(createMutation)
-                .retrieve("createAchievementType")
+                .retrieve("achievementType.create")
                 .toEntity(CreateAchievementTypeResponse.class)
                 .block();
 
@@ -169,25 +243,24 @@ class AchievementTypeTest {
         // When - Update the achievement type
         String updateMutation = String.format("""
                 mutation {
-                  updateAchievementType(
-                    input: {
-                      id: "%s"
-                      name: "Updated Achievement"
-                      description: "Updated description"
-                      points: 200
-                      badgeUrl: "https://example.com/updated.png"
-                    }
-                  ) {
-                    errors {
-                      field
-                      message
-                    }
-                    achievementType {
-                      id
-                      name
-                      description
-                      points
-                      badgeUrl
+                  achievementType {
+                    update(
+                      input: {
+                        achievementTypeId: "%s"
+                        name: "Updated Achievement"
+                        description: "Updated description"
+                      }
+                    ) {
+                      errors {
+                        field
+                        message
+                      }
+                      achievementType {
+                        id
+                        name
+                        description
+                        lifecycleState
+                      }
                     }
                   }
                 }
@@ -195,21 +268,19 @@ class AchievementTypeTest {
 
         UpdateAchievementTypeResponse updateResponse = graphQlClient
                 .document(updateMutation)
-                .retrieve("updateAchievementType")
+                .retrieve("achievementType.update")
                 .toEntity(UpdateAchievementTypeResponse.class)
                 .block();
 
         // Then - Verify update was successful
         assertThat(updateResponse).isNotNull();
         assertThat(updateResponse.getErrors()).isEmpty();
-        
+
         AchievementType updated = updateResponse.getAchievementType();
         assertThat(updated).isNotNull();
         assertThat(updated.getId()).isEqualTo(achievementId);
         assertThat(updated.getName()).isEqualTo("Updated Achievement");
         assertThat(updated.getDescription()).isEqualTo("Updated description");
-        assertThat(updated.getPoints()).isEqualTo(200);
-        assertThat(updated.getBadgeUrl()).isEqualTo("https://example.com/updated.png");
     }
 
     @Test
@@ -218,15 +289,16 @@ class AchievementTypeTest {
         // Given - Create multiple achievement types with different names
         String create1 = """
                 mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Filter Test Achievement A"
-                      points: 100
-                    }
-                  ) {
-                    achievementType {
-                      id
-                      name
+                  achievementType {
+                    create(
+                      input: {
+                        name: "Filter Test Achievement A"
+                      }
+                    ) {
+                      achievementType {
+                        id
+                        name
+                      }
                     }
                   }
                 }
@@ -234,22 +306,23 @@ class AchievementTypeTest {
 
         String create2 = """
                 mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Filter Test Achievement B"
-                      points: 200
-                    }
-                  ) {
-                    achievementType {
-                      id
-                      name
+                  achievementType {
+                    create(
+                      input: {
+                        name: "Filter Test Achievement B"
+                      }
+                    ) {
+                      achievementType {
+                        id
+                        name
+                      }
                     }
                   }
                 }
                 """;
 
-        graphQlClient.document(create1).retrieve("createAchievementType").toEntity(CreateAchievementTypeResponse.class).block();
-        graphQlClient.document(create2).retrieve("createAchievementType").toEntity(CreateAchievementTypeResponse.class).block();
+        graphQlClient.document(create1).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
+        graphQlClient.document(create2).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
 
         // When - Filter by name containing "Achievement A"
         String filterQuery = """
@@ -267,7 +340,7 @@ class AchievementTypeTest {
                       node {
                         id
                         name
-                        points
+                        lifecycleState
                       }
                     }
                     pageInfo {
@@ -286,12 +359,12 @@ class AchievementTypeTest {
         // Then - Verify connection structure
         assertThat(connection).isNotNull();
         assertThat(connection.getEdges()).isNotNull();
-        
+
         List<AchievementType> filteredAchievements = connection.getEdges().stream()
                 .map(AchievementTypeConnection.AchievementTypeEdge::getNode)
                 .filter(achievement -> achievement != null && achievement.getName() != null)
                 .collect(Collectors.toList());
-        
+
         // Filter may return all results or filtered results depending on implementation
         assertThat(filteredAchievements).isNotNull();
         // If we have results, verify at least one matches our filter criteria
@@ -304,103 +377,20 @@ class AchievementTypeTest {
     }
 
     @Test
-    @DisplayName("Should filter achievement types by points")
-    void shouldFilterAchievementTypesByPoints() {
-        // Given - Create achievement types with different point values
-        String createLow = """
-                mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Low Points Achievement"
-                      points: 50
-                    }
-                  ) {
-                    achievementType {
-                      id
-                    }
-                  }
-                }
-                """;
-
-        String createHigh = """
-                mutation {
-                  createAchievementType(
-                    input: {
-                      name: "High Points Achievement"
-                      points: 500
-                    }
-                  ) {
-                    achievementType {
-                      id
-                    }
-                  }
-                }
-                """;
-
-        graphQlClient.document(createLow).retrieve("createAchievementType").toEntity(CreateAchievementTypeResponse.class).block();
-        graphQlClient.document(createHigh).retrieve("createAchievementType").toEntity(CreateAchievementTypeResponse.class).block();
-
-        // When - Filter by points greater than 100
-        String filterQuery = """
-                query {
-                  achievementTypes(
-                    filters: [
-                      {
-                        field: points
-                        operation: GREATER_THAN
-                        value: "100"
-                      }
-                    ]
-                  ) {
-                    edges {
-                      node {
-                        id
-                        name
-                        points
-                      }
-                    }
-                  }
-                }
-                """;
-
-        AchievementTypeConnection connection = graphQlClient
-                .document(filterQuery)
-                .retrieve("achievementTypes")
-                .toEntity(AchievementTypeConnection.class)
-                .block();
-
-        // Then - Verify connection structure
-        assertThat(connection).isNotNull();
-        assertThat(connection.getEdges()).isNotNull();
-        
-        List<AchievementType> filteredAchievements = connection.getEdges().stream()
-                .map(AchievementTypeConnection.AchievementTypeEdge::getNode)
-                .filter(achievement -> achievement != null)
-                .collect(Collectors.toList());
-        
-        // Filter may return all results or filtered results depending on implementation
-        assertThat(filteredAchievements).isNotNull();
-        // If we have results, verify structure is correct
-        if (!filteredAchievements.isEmpty()) {
-            // At least verify the connection structure works
-            assertThat(filteredAchievements.get(0).getId()).isNotBlank();
-        }
-    }
-
-    @Test
-    @DisplayName("Should filter achievement types by exact points value")
-    void shouldFilterAchievementTypesByExactPoints() {
-        // Given - Create achievement types with specific point values
+    @DisplayName("Should filter achievement types by exact name value")
+    void shouldFilterAchievementTypesByExactName() {
+        // Given - Create achievement types with specific names
         String create1 = """
                 mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Exact Points Test 1"
-                      points: 250
-                    }
-                  ) {
-                    achievementType {
-                      id
+                  achievementType {
+                    create(
+                      input: {
+                        name: "Exact Name Test 1"
+                      }
+                    ) {
+                      achievementType {
+                        id
+                      }
                     }
                   }
                 }
@@ -408,31 +398,32 @@ class AchievementTypeTest {
 
         String create2 = """
                 mutation {
-                  createAchievementType(
-                    input: {
-                      name: "Exact Points Test 2"
-                      points: 300
-                    }
-                  ) {
-                    achievementType {
-                      id
+                  achievementType {
+                    create(
+                      input: {
+                        name: "Exact Name Test 2"
+                      }
+                    ) {
+                      achievementType {
+                        id
+                      }
                     }
                   }
                 }
                 """;
 
-        graphQlClient.document(create1).retrieve("createAchievementType").toEntity(CreateAchievementTypeResponse.class).block();
-        graphQlClient.document(create2).retrieve("createAchievementType").toEntity(CreateAchievementTypeResponse.class).block();
+        graphQlClient.document(create1).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
+        graphQlClient.document(create2).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
 
-        // When - Filter by exact points value
+        // When - Filter by exact name value
         String filterQuery = """
                 query {
                   achievementTypes(
                     filters: [
                       {
-                        field: points
+                        field: name
                         operation: EQUALS
-                        value: "250"
+                        value: "Exact Name Test 1"
                       }
                     ]
                   ) {
@@ -440,7 +431,7 @@ class AchievementTypeTest {
                       node {
                         id
                         name
-                        points
+                        lifecycleState
                       }
                     }
                   }
@@ -456,20 +447,36 @@ class AchievementTypeTest {
         // Then - Verify connection structure
         assertThat(connection).isNotNull();
         assertThat(connection.getEdges()).isNotNull();
-        
+
         List<AchievementType> filteredAchievements = connection.getEdges().stream()
                 .map(AchievementTypeConnection.AchievementTypeEdge::getNode)
                 .filter(achievement -> achievement != null)
                 .collect(Collectors.toList());
-        
+
         // Filter may return all results or filtered results depending on implementation
         assertThat(filteredAchievements).isNotNull();
         // If we have results, verify structure is correct
         if (!filteredAchievements.isEmpty()) {
             boolean hasMatch = filteredAchievements.stream()
-                    .anyMatch(achievement -> achievement.getPoints() != null && achievement.getPoints().equals(250));
+                    .anyMatch(achievement -> "Exact Name Test 1".equals(achievement.getName()));
             // If filter is working, we should have matches; if not, at least structure is correct
             assertThat(hasMatch || filteredAchievements.size() > 0).isTrue();
+        }
+    }
+
+    @Configuration
+    static class TestConfig {
+        @Bean
+        public WebClient webClient() {
+            return WebClient.builder()
+                    .baseUrl("http://localhost:4000/graphql")
+                    .build();
+        }
+
+        @Bean
+        public HttpGraphQlClient graphQlClient(WebClient webClient) {
+            return HttpGraphQlClient.builder(webClient)
+                    .build();
         }
     }
 }

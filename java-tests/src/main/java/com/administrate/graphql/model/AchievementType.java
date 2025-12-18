@@ -8,9 +8,7 @@ public class AchievementType {
     private String id;
     private String name;
     private String description;
-    private Integer points;
-    private String badgeUrl;
-    private String certificateType;
+    private String lifecycleState;
     private Instant createdAt;
     private Instant updatedAt;
 
@@ -24,14 +22,8 @@ public class AchievementType {
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     
-    public Integer getPoints() { return points; }
-    public void setPoints(Integer points) { this.points = points; }
-    
-    public String getBadgeUrl() { return badgeUrl; }
-    public void setBadgeUrl(String badgeUrl) { this.badgeUrl = badgeUrl; }
-    
-    public String getCertificateType() { return certificateType; }
-    public void setCertificateType(String certificateType) { this.certificateType = certificateType; }
+    public String getLifecycleState() { return lifecycleState; }
+    public void setLifecycleState(String lifecycleState) { this.lifecycleState = lifecycleState; }
     
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }

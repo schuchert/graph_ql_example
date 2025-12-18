@@ -14,16 +14,25 @@ java {
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 
 dependencies {
-    // Spring Boot WebFlux for reactive HTTP client
+    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-graphql")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.19.2")
+    implementation("com.graphql-java:graphql-java:20.0")
+    implementation("com.graphql-java-generator:graphql-java-client-runtime:2.9")
+    implementation("com.example:administrate-graphql-client:1.0.0")
+    implementation("org.projectlombok:lombok:1.18.42")
+    annotationProcessor("org.projectlombok:lombok:1.18.42")
+    implementation("com.graphql-java:java-dataloader:6.0.0")
+
     implementation("org.springframework.boot:spring-boot-starter-webflux")
-    
-    // Spring GraphQL
-    implementation("org.springframework.graphql:spring-graphql:1.2.6")
-    
+
     // Jackson for JSON
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
@@ -97,18 +106,3 @@ tasks.named("resolveMainClassName") {
 tasks.named<Jar>("jar") {
     enabled = true
 }
-
-// Clean task - clear test results and cache
-tasks.named("clean") {
-    doLast {
-        delete("build/test-results")
-        delete("build/reports/tests")
-        delete("build/classes/java/test")
-        // Clear Gradle test cache
-        fileTree("${project.buildDir}").matching {
-            include("**/.gradle/**")
-        }.forEach { it.delete() }
-        println("Cleaned test results and cache - tests will run fresh on next test execution")
-    }
-}
-
