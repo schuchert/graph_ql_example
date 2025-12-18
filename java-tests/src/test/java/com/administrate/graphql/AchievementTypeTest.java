@@ -161,8 +161,9 @@ class AchievementTypeTest {
 
         // Then - Verify creation was successful
         assertThat(wrapper).isNotNull();
-        assertThat(wrapper.getCreate()).isNotNull();
-        CreateAchievementTypeResponse createResponse = wrapper.getCreate();
+        assertThat(wrapper.getAchievementType()).isNotNull();
+        assertThat(wrapper.getAchievementType().getCreate()).isNotNull();
+        CreateAchievementTypeResponse createResponse = wrapper.getAchievementType().getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
 
         AchievementType createdAchievement = createResponse.getAchievementType();
@@ -240,8 +241,9 @@ class AchievementTypeTest {
                 .block();
 
         assertThat(createWrapper).isNotNull();
-        assertThat(createWrapper.getCreate()).isNotNull();
-        CreateAchievementTypeResponse createResponse = createWrapper.getCreate();
+        assertThat(createWrapper.getAchievementType()).isNotNull();
+        assertThat(createWrapper.getAchievementType().getCreate()).isNotNull();
+        CreateAchievementTypeResponse createResponse = createWrapper.getAchievementType().getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
         AchievementType created = createResponse.getAchievementType();
         assertThat(created).isNotNull();
@@ -281,8 +283,9 @@ class AchievementTypeTest {
 
         // Then - Verify update was successful
         assertThat(updateWrapper).isNotNull();
-        assertThat(updateWrapper.getUpdate()).isNotNull();
-        UpdateAchievementTypeResponse updateResponse = updateWrapper.getUpdate();
+        assertThat(updateWrapper.getAchievementType()).isNotNull();
+        assertThat(updateWrapper.getAchievementType().getUpdate()).isNotNull();
+        UpdateAchievementTypeResponse updateResponse = updateWrapper.getAchievementType().getUpdate();
         assertThat(updateResponse.getErrors()).isEmpty();
 
         AchievementType updated = updateResponse.getAchievementType();

@@ -179,8 +179,9 @@ class CourseTemplateTest {
 
         // Then - Verify creation was successful
         assertThat(wrapper).isNotNull();
-        assertThat(wrapper.getCreate()).isNotNull();
-        CreateCourseTemplateResponse createResponse = wrapper.getCreate();
+        assertThat(wrapper.getCourseTemplate()).isNotNull();
+        assertThat(wrapper.getCourseTemplate().getCreate()).isNotNull();
+        CreateCourseTemplateResponse createResponse = wrapper.getCourseTemplate().getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
         
         CourseTemplate createdCourse = createResponse.getCourseTemplate();
@@ -262,8 +263,9 @@ class CourseTemplateTest {
                 .block();
 
         assertThat(createWrapper).isNotNull();
-        assertThat(createWrapper.getCreate()).isNotNull();
-        CreateCourseTemplateResponse createResponse = createWrapper.getCreate();
+        assertThat(createWrapper.getCourseTemplate()).isNotNull();
+        assertThat(createWrapper.getCourseTemplate().getCreate()).isNotNull();
+        CreateCourseTemplateResponse createResponse = createWrapper.getCourseTemplate().getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
         CourseTemplate created = createResponse.getCourseTemplate();
         assertThat(created).isNotNull();
@@ -303,8 +305,9 @@ class CourseTemplateTest {
 
         // Then - Verify update was successful
         assertThat(updateWrapper).isNotNull();
-        assertThat(updateWrapper.getUpdate()).isNotNull();
-        UpdateCourseTemplateResponse updateResponse = updateWrapper.getUpdate();
+        assertThat(updateWrapper.getCourseTemplate()).isNotNull();
+        assertThat(updateWrapper.getCourseTemplate().getUpdate()).isNotNull();
+        UpdateCourseTemplateResponse updateResponse = updateWrapper.getCourseTemplate().getUpdate();
         assertThat(updateResponse.getErrors()).isEmpty();
         
         CourseTemplate updated = updateResponse.getCourseTemplate();

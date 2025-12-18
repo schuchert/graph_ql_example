@@ -37,90 +37,107 @@ type Query {
 }
 
 type Mutation {
-  # CourseTemplate mutations
-  createCourseTemplate(
-    input: CourseTemplateCreateInput!
-  ): CourseTemplateMutateResponse!
+  # Mutations for Course Templates (nested structure)
+  courseTemplate: CourseTemplateMutations!
   
-  updateCourseTemplate(
-    input: CourseTemplateUpdateInput!
-  ): CourseTemplateMutateResponse!
-  
-  deleteCourseTemplate(
-    id: ID!
-  ): Boolean!
-  
-  # CourseTemplate LMS Content mutations
-  courseTemplateAddLmsContentTypeResource(
-    courseTemplateId: ID!
-    input: CourseTemplateAddLmsContentTypeResourceInput!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateAddLmsContentTypeExternal(
-    courseTemplateId: ID!
-    input: CourseTemplateAddLmsContentTypeExternalInput!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateAddLmsContentTypeSeparator(
-    courseTemplateId: ID!
-    input: CourseTemplateAddLmsContentTypeSeparatorInput!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateRemoveLmsContentType(
-    courseTemplateId: ID!
-    contentId: ID!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateUpdateLmsContentTypeResource(
-    courseTemplateId: ID!
-    contentId: ID!
-    input: CourseTemplateUpdateLmsContentTypeResourceInput!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateUpdateLmsContentTypeExternal(
-    courseTemplateId: ID!
-    contentId: ID!
-    input: CourseTemplateUpdateLmsContentTypeExternalInput!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateUpdateLmsContentTypeSeparator(
-    courseTemplateId: ID!
-    contentId: ID!
-    input: CourseTemplateUpdateLmsContentTypeSeparatorInput!
-  ): CourseTemplateMutateResponse!
-  
-  # AchievementType mutations
-  createAchievementType(
-    input: AchievementTypeCreateInput!
-  ): AchievementTypeMutateResponse!
-  
-  updateAchievementType(
-    input: AchievementTypeUpdateInput!
-  ): AchievementTypeMutateResponse!
-  
-  deleteAchievementType(
-    id: ID!
-  ): Boolean!
-  
-  # CourseTemplate AchievementType mutations
-  courseTemplateAddAchievementType(
-    courseTemplateId: ID!
-    input: CourseTemplateAddAchievementTypeInput!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateRemoveAchievementType(
-    courseTemplateId: ID!
-    achievementTypeId: ID!
-  ): CourseTemplateMutateResponse!
-  
-  courseTemplateUpdateAchievementType(
-    courseTemplateId: ID!
-    achievementTypeId: ID!
-    input: CourseTemplateUpdateAchievementTypeInput!
-  ): CourseTemplateMutateResponse!
+  # Mutations for Achievement Types (nested structure)
+  achievementType: AchievementTypeMutations!
   
   # Clear all data (for testing/development)
   clearAllData: ClearAllDataResponse!
+}
+
+# CourseTemplate Mutations (nested structure matching generated code)
+type CourseTemplateMutations {
+  """Creates a new Course Template"""
+  create(
+    input: CourseTemplateCreateInput!
+  ): CourseTemplateCreateResponse!
+  
+  """Updates an existing Course Template"""
+  update(
+    courseTemplateId: ID!
+    input: CourseTemplateUpdateInput!
+  ): CourseTemplateUpdateResponse!
+  
+  """Delete a Course Template"""
+  delete(
+    courseTemplateId: ID!
+  ): CourseTemplateMutationResponse!
+  
+  # CourseTemplate LMS Content mutations
+  addLmsContentTypeResource(
+    courseTemplateId: ID!
+    input: CourseTemplateAddLmsContentTypeResourceInput!
+  ): CourseTemplateMutationResponse!
+  
+  addLmsContentTypeExternal(
+    courseTemplateId: ID!
+    input: CourseTemplateAddLmsContentTypeExternalInput!
+  ): CourseTemplateMutationResponse!
+  
+  addLmsContentTypeSeparator(
+    courseTemplateId: ID!
+    input: CourseTemplateAddLmsContentTypeSeparatorInput!
+  ): CourseTemplateMutationResponse!
+  
+  removeLmsContentType(
+    courseTemplateId: ID!
+    contentId: ID!
+  ): CourseTemplateMutationResponse!
+  
+  updateLmsContentTypeResource(
+    courseTemplateId: ID!
+    contentId: ID!
+    input: CourseTemplateUpdateLmsContentTypeResourceInput!
+  ): CourseTemplateMutationResponse!
+  
+  updateLmsContentTypeExternal(
+    courseTemplateId: ID!
+    contentId: ID!
+    input: CourseTemplateUpdateLmsContentTypeExternalInput!
+  ): CourseTemplateMutationResponse!
+  
+  updateLmsContentTypeSeparator(
+    courseTemplateId: ID!
+    contentId: ID!
+    input: CourseTemplateUpdateLmsContentTypeSeparatorInput!
+  ): CourseTemplateMutationResponse!
+  
+  # CourseTemplate AchievementType mutations
+  addAchievementType(
+    courseTemplateId: ID!
+    input: CourseTemplateAddAchievementTypeInput!
+  ): CourseTemplateMutationResponse!
+  
+  removeAchievementType(
+    courseTemplateId: ID!
+    achievementTypeId: ID!
+  ): CourseTemplateMutationResponse!
+  
+  updateAchievementType(
+    courseTemplateId: ID!
+    achievementTypeId: ID!
+    input: CourseTemplateUpdateAchievementTypeInput!
+  ): CourseTemplateMutationResponse!
+}
+
+# AchievementType Mutations (nested structure matching generated code)
+type AchievementTypeMutations {
+  """Creates an Achievement Type"""
+  create(
+    input: AchievementTypeCreateInput!
+  ): AchievementTypeMutateResponse!
+  
+  """Updates an Achievement Type"""
+  update(
+    input: AchievementTypeUpdateInput!
+  ): AchievementTypeMutateResponse!
+  
+  """Deletes an Achievement Type"""
+  delete(
+    achievementTypeId: ID!
+  ): AchievementTypeMutateResponse!
 }
 
 # CourseTemplate Type
@@ -169,9 +186,7 @@ type AchievementType {
   legacyId: String!
   name: String!
   description: String
-  points: Int
-  badgeUrl: String
-  certificateType: CertificateType
+  lifecycleState: LifecycleState!
   createdAt: String!
   updatedAt: String!
   
@@ -413,8 +428,18 @@ type PageInfo {
   endCursor: String
 }
 
-# Response Types
-type CourseTemplateMutateResponse {
+# Response Types (matching generated Kotlin structure)
+type CourseTemplateCreateResponse {
+  errors: [FieldError!]!
+  courseTemplate: CourseTemplate
+}
+
+type CourseTemplateUpdateResponse {
+  errors: [FieldError!]!
+  courseTemplate: CourseTemplate
+}
+
+type CourseTemplateMutationResponse {
   errors: [FieldError!]!
   courseTemplate: CourseTemplate
 }
@@ -425,26 +450,27 @@ type AchievementTypeMutateResponse {
 }
 
 type FieldError {
-  field: String!
+  label: String
   message: String!
+  value: String
 }
 
 # Input Types
 input CourseTemplateCreateInput {
-  name: String!
-  description: String
-  code: String
-  title: String
+  title: String!
+  code: String!
+  shortCode: String
   learningMode: LearningMode
+  lifecycleState: LifecycleState
+  description: String
 }
 
 input CourseTemplateUpdateInput {
-  id: ID!
-  name: String
+  title: String
   description: String
   code: String
-  title: String
   learningMode: LearningMode
+  lifecycleState: LifecycleState
 }
 
 input CourseTemplateAddLmsContentTypeResourceInput {
@@ -498,18 +524,30 @@ input CourseTemplateUpdateLmsContentTypeSeparatorInput {
 input AchievementTypeCreateInput {
   name: String!
   description: String
-  points: Int
-  badgeUrl: String
+  validityPeriod: DateDeltaInput
+  imageId: ID
   certificateTypeId: ID
+  certificateTypeIds: [ID]
+  sequenceId: ID
 }
 
 input AchievementTypeUpdateInput {
-  id: ID!
+  achievementTypeId: ID!
   name: String
   description: String
-  points: Int
-  badgeUrl: String
+  isArchived: Boolean
+  validityPeriod: DateDeltaInput
+  imageId: ID
   certificateTypeId: ID
+  certificateTypeIds: [ID]
+  sequenceId: ID
+}
+
+# Supporting input types
+input DateDeltaInput {
+  days: Int
+  months: Int
+  years: Int
 }
 
 input CourseTemplateAddAchievementTypeInput {
