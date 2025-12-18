@@ -4,6 +4,8 @@ import com.administrate.graphql.model.CourseTemplate;
 import com.administrate.graphql.model.CourseTemplateConnection;
 import com.administrate.graphql.model.CreateCourseTemplateResponse;
 import com.administrate.graphql.model.UpdateCourseTemplateResponse;
+import com.administrate.graphql.model.CourseTemplateCreateWrapper;
+import com.administrate.graphql.model.CourseTemplateUpdateWrapper;
 import com.administrate.graphql.model.AchievementTypeConnection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -168,14 +170,17 @@ class CourseTemplateTest {
                 """;
 
         // When - Execute the mutation
-        CreateCourseTemplateResponse createResponse = graphQlClient
+        // Note: The response is nested under courseTemplate.create, so we need to retrieve it properly
+        CourseTemplateCreateWrapper wrapper = graphQlClient
                 .document(mutation)
-                .retrieve("courseTemplate.create")
-                .toEntity(CreateCourseTemplateResponse.class)
+                .retrieve("courseTemplate")
+                .toEntity(CourseTemplateCreateWrapper.class)
                 .block();
 
         // Then - Verify creation was successful
-        assertThat(createResponse).isNotNull();
+        assertThat(wrapper).isNotNull();
+        assertThat(wrapper.getCreate()).isNotNull();
+        CreateCourseTemplateResponse createResponse = wrapper.getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
         
         CourseTemplate createdCourse = createResponse.getCourseTemplate();
@@ -250,13 +255,15 @@ class CourseTemplateTest {
                 }
                 """;
 
-        CreateCourseTemplateResponse createResponse = graphQlClient
+        CourseTemplateCreateWrapper createWrapper = graphQlClient
                 .document(createMutation)
-                .retrieve("courseTemplate.create")
-                .toEntity(CreateCourseTemplateResponse.class)
+                .retrieve("courseTemplate")
+                .toEntity(CourseTemplateCreateWrapper.class)
                 .block();
 
-        assertThat(createResponse).isNotNull();
+        assertThat(createWrapper).isNotNull();
+        assertThat(createWrapper.getCreate()).isNotNull();
+        CreateCourseTemplateResponse createResponse = createWrapper.getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
         CourseTemplate created = createResponse.getCourseTemplate();
         assertThat(created).isNotNull();
@@ -288,14 +295,16 @@ class CourseTemplateTest {
                 }
                 """, courseId);
 
-        UpdateCourseTemplateResponse updateResponse = graphQlClient
+        CourseTemplateUpdateWrapper updateWrapper = graphQlClient
                 .document(updateMutation)
-                .retrieve("courseTemplate.update")
-                .toEntity(UpdateCourseTemplateResponse.class)
+                .retrieve("courseTemplate")
+                .toEntity(CourseTemplateUpdateWrapper.class)
                 .block();
 
         // Then - Verify update was successful
-        assertThat(updateResponse).isNotNull();
+        assertThat(updateWrapper).isNotNull();
+        assertThat(updateWrapper.getUpdate()).isNotNull();
+        UpdateCourseTemplateResponse updateResponse = updateWrapper.getUpdate();
         assertThat(updateResponse.getErrors()).isEmpty();
         
         CourseTemplate updated = updateResponse.getCourseTemplate();
@@ -347,8 +356,8 @@ class CourseTemplateTest {
                 }
                 """;
 
-        graphQlClient.document(create1).retrieve("courseTemplate.create").toEntity(CreateCourseTemplateResponse.class).block();
-        graphQlClient.document(create2).retrieve("courseTemplate.create").toEntity(CreateCourseTemplateResponse.class).block();
+        graphQlClient.document(create1).retrieve("courseTemplate").toEntity(CourseTemplateCreateWrapper.class).block();
+        graphQlClient.document(create2).retrieve("courseTemplate").toEntity(CourseTemplateCreateWrapper.class).block();
 
         // When - Filter by title containing "Course A"
         String filterQuery = """
@@ -444,8 +453,8 @@ class CourseTemplateTest {
                 }
                 """;
 
-        graphQlClient.document(createLms).retrieve("courseTemplate.create").toEntity(CreateCourseTemplateResponse.class).block();
-        graphQlClient.document(createClassroom).retrieve("courseTemplate.create").toEntity(CreateCourseTemplateResponse.class).block();
+        graphQlClient.document(createLms).retrieve("courseTemplate").toEntity(CourseTemplateCreateWrapper.class).block();
+        graphQlClient.document(createClassroom).retrieve("courseTemplate").toEntity(CourseTemplateCreateWrapper.class).block();
 
         // When - Filter by learning mode LMS
         String filterQuery = """
@@ -535,8 +544,8 @@ class CourseTemplateTest {
                 }
                 """;
 
-        graphQlClient.document(create1).retrieve("courseTemplate.create").toEntity(CreateCourseTemplateResponse.class).block();
-        graphQlClient.document(create2).retrieve("courseTemplate.create").toEntity(CreateCourseTemplateResponse.class).block();
+        graphQlClient.document(create1).retrieve("courseTemplate").toEntity(CourseTemplateCreateWrapper.class).block();
+        graphQlClient.document(create2).retrieve("courseTemplate").toEntity(CourseTemplateCreateWrapper.class).block();
 
         // When - Filter by specific code
         String filterQuery = """

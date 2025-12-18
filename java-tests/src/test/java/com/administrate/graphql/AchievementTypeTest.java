@@ -4,6 +4,8 @@ import com.administrate.graphql.model.AchievementType;
 import com.administrate.graphql.model.AchievementTypeConnection;
 import com.administrate.graphql.model.CreateAchievementTypeResponse;
 import com.administrate.graphql.model.UpdateAchievementTypeResponse;
+import com.administrate.graphql.model.AchievementTypeCreateWrapper;
+import com.administrate.graphql.model.AchievementTypeUpdateWrapper;
 import com.administrate.graphql.model.CourseTemplateConnection;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -150,14 +152,17 @@ class AchievementTypeTest {
                 """;
 
         // When - Execute the mutation
-        CreateAchievementTypeResponse createResponse = graphQlClient
+        // Note: The response is nested under achievementType.create, so we need to retrieve it properly
+        AchievementTypeCreateWrapper wrapper = graphQlClient
                 .document(mutation)
-                .retrieve("achievementType.create")
-                .toEntity(CreateAchievementTypeResponse.class)
+                .retrieve("achievementType")
+                .toEntity(AchievementTypeCreateWrapper.class)
                 .block();
 
         // Then - Verify creation was successful
-        assertThat(createResponse).isNotNull();
+        assertThat(wrapper).isNotNull();
+        assertThat(wrapper.getCreate()).isNotNull();
+        CreateAchievementTypeResponse createResponse = wrapper.getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
 
         AchievementType createdAchievement = createResponse.getAchievementType();
@@ -228,13 +233,15 @@ class AchievementTypeTest {
                 }
                 """;
 
-        CreateAchievementTypeResponse createResponse = graphQlClient
+        AchievementTypeCreateWrapper createWrapper = graphQlClient
                 .document(createMutation)
-                .retrieve("achievementType.create")
-                .toEntity(CreateAchievementTypeResponse.class)
+                .retrieve("achievementType")
+                .toEntity(AchievementTypeCreateWrapper.class)
                 .block();
 
-        assertThat(createResponse).isNotNull();
+        assertThat(createWrapper).isNotNull();
+        assertThat(createWrapper.getCreate()).isNotNull();
+        CreateAchievementTypeResponse createResponse = createWrapper.getCreate();
         assertThat(createResponse.getErrors()).isEmpty();
         AchievementType created = createResponse.getAchievementType();
         assertThat(created).isNotNull();
@@ -266,14 +273,16 @@ class AchievementTypeTest {
                 }
                 """, achievementId);
 
-        UpdateAchievementTypeResponse updateResponse = graphQlClient
+        AchievementTypeUpdateWrapper updateWrapper = graphQlClient
                 .document(updateMutation)
-                .retrieve("achievementType.update")
-                .toEntity(UpdateAchievementTypeResponse.class)
+                .retrieve("achievementType")
+                .toEntity(AchievementTypeUpdateWrapper.class)
                 .block();
 
         // Then - Verify update was successful
-        assertThat(updateResponse).isNotNull();
+        assertThat(updateWrapper).isNotNull();
+        assertThat(updateWrapper.getUpdate()).isNotNull();
+        UpdateAchievementTypeResponse updateResponse = updateWrapper.getUpdate();
         assertThat(updateResponse.getErrors()).isEmpty();
 
         AchievementType updated = updateResponse.getAchievementType();
@@ -321,8 +330,8 @@ class AchievementTypeTest {
                 }
                 """;
 
-        graphQlClient.document(create1).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
-        graphQlClient.document(create2).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
+        graphQlClient.document(create1).retrieve("achievementType").toEntity(AchievementTypeCreateWrapper.class).block();
+        graphQlClient.document(create2).retrieve("achievementType").toEntity(AchievementTypeCreateWrapper.class).block();
 
         // When - Filter by name containing "Achievement A"
         String filterQuery = """
@@ -412,8 +421,8 @@ class AchievementTypeTest {
                 }
                 """;
 
-        graphQlClient.document(create1).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
-        graphQlClient.document(create2).retrieve("achievementType.create").toEntity(CreateAchievementTypeResponse.class).block();
+        graphQlClient.document(create1).retrieve("achievementType").toEntity(AchievementTypeCreateWrapper.class).block();
+        graphQlClient.document(create2).retrieve("achievementType").toEntity(AchievementTypeCreateWrapper.class).block();
 
         // When - Filter by exact name value
         String filterQuery = """
