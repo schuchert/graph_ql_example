@@ -18,14 +18,14 @@ LIFECYCLE_STATE="${3:-}"
 
 GRAPHQL_URL="${GRAPHQL_URL:-http://localhost:4000/graphql}"
 
-# Build the input object dynamically
+# Build the input object dynamically - enum values must be unquoted in GraphQL
 INPUT_OBJ="title: \"$TITLE\""
 if [ -n "$LIFECYCLE_STATE" ]; then
-  INPUT_OBJ="$INPUT_OBJ, lifecycleState: \"$LIFECYCLE_STATE\""
+  INPUT_OBJ="$INPUT_OBJ, lifecycleState: $LIFECYCLE_STATE"
 fi
 
 MUTATION=$(cat <<EOF
-{
+mutation {
   courseTemplate {
     update(
       courseTemplateId: "$COURSE_TEMPLATE_ID"

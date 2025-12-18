@@ -157,7 +157,7 @@ mutation {
     create(input: {
       code: "ADV-201"
       title: "Advanced GraphQL Patterns"
-      lifecycleState: "draft"
+      lifecycleState: draft
     }) {
       courseTemplate {
         id
@@ -176,6 +176,11 @@ mutation {
   }
 }
 ```
+
+**Note:** 
+- The `mutation` keyword is required at the beginning of all mutation operations
+- Enum values (like `lifecycleState`) must be unquoted in GraphQL (e.g., `draft`, not `"draft"`)
+- Valid `lifecycleState` values: `draft`, `published`, `archived`
 
 **Example Response:**
 ```json
@@ -215,7 +220,7 @@ mutation {
       courseTemplateId: "ct_2_1234567891"
       input: {
         title: "Advanced GraphQL Patterns and Best Practices"
-        lifecycleState: "active"
+        lifecycleState: published
       }
     ) {
       courseTemplate {
@@ -234,6 +239,11 @@ mutation {
   }
 }
 ```
+
+**Note:** 
+- The `mutation` keyword is required at the beginning of all mutation operations
+- Enum values (like `lifecycleState`) must be unquoted in GraphQL (e.g., `published`, not `"published"`)
+- Valid `lifecycleState` values: `draft`, `published`, `archived`
 
 **Example Response:**
 ```json

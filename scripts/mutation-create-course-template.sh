@@ -18,13 +18,17 @@ LIFECYCLE_STATE="${3:-draft}"
 
 GRAPHQL_URL="${GRAPHQL_URL:-http://localhost:4000/graphql}"
 
+# Build the input object - enum values must be unquoted in GraphQL
+INPUT_OBJ="code: \"$CODE\", title: \"$TITLE\""
+if [ -n "$LIFECYCLE_STATE" ]; then
+  INPUT_OBJ="$INPUT_OBJ, lifecycleState: $LIFECYCLE_STATE"
+fi
+
 MUTATION=$(cat <<EOF
-{
+mutation {
   courseTemplate {
     create(input: {
-      code: "$CODE"
-      title: "$TITLE"
-      lifecycleState: "$LIFECYCLE_STATE"
+      $INPUT_OBJ
     }) {
       courseTemplate {
         id

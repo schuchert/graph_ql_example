@@ -7,7 +7,7 @@
 GRAPHQL_URL="${GRAPHQL_URL:-http://localhost:4000/graphql}"
 
 MUTATION='
-{
+mutation {
   clearAllData {
     success
     message
